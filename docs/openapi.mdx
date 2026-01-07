@@ -1,0 +1,177 @@
+---
+title: "OpenAPI Specification"
+description: "Access the complete OpenAPI specification for the DNSTail API"
+---
+
+## Overview
+
+The DNSTail API is fully documented using the OpenAPI 3.0 specification (formerly known as Swagger). This machine-readable format allows you to automatically generate client libraries, test your API integration, and import the API into various development tools.
+
+## Download the Specification
+
+You can access our complete OpenAPI specification file here:
+
+<Card title="OpenAPI Specification" icon="file-code" href="https://api.dnstail.com/openapi.json">
+  Download the latest OpenAPI 3.0 JSON specification
+</Card>
+
+<Info>
+  Our OpenAPI specification is automatically updated whenever we release new API features or changes. You can always access the latest version at the URL above.
+</Info>
+
+## What's Included
+
+The OpenAPI specification contains complete details about:
+
+<AccordionGroup>
+  <Accordion title="Endpoints" icon="route">
+    All available API endpoints with their paths, HTTP methods, and descriptions
+  </Accordion>
+
+  <Accordion title="Request Parameters" icon="sliders">
+    Query parameters, path parameters, headers, and request body schemas
+  </Accordion>
+
+  <Accordion title="Response Schemas" icon="brackets-curly">
+    Detailed response structures for success and error cases
+  </Accordion>
+
+  <Accordion title="Authentication" icon="key">
+    Security schemes and authentication requirements
+  </Accordion>
+
+  <Accordion title="Data Models" icon="shapes">
+    Complete schema definitions for all data types (Monitors, Events, Webhooks, etc.)
+  </Accordion>
+
+  <Accordion title="Examples" icon="code">
+    Request and response examples for each endpoint
+  </Accordion>
+</AccordionGroup>
+
+## Using the Specification
+
+### Generate Client Libraries
+
+Use the OpenAPI specification to automatically generate client libraries in your preferred programming language:
+
+<CodeGroup>
+```bash OpenAPI Generator
+# Install OpenAPI Generator
+npm install @openapitools/openapi-generator-cli -g
+
+# Generate a Python client
+openapi-generator-cli generate \
+  -i https://api.dnstail.com/openapi.json \
+  -g python \
+  -o ./dnstail-python-client
+
+# Generate a JavaScript/TypeScript client
+openapi-generator-cli generate \
+  -i https://api.dnstail.com/openapi.json \
+  -g typescript-fetch \
+  -o ./dnstail-ts-client
+```
+
+```bash Swagger Codegen
+# Using Swagger Codegen
+swagger-codegen generate \
+  -i https://api.dnstail.com/openapi.json \
+  -l ruby \
+  -o ./dnstail-ruby-client
+```
+</CodeGroup>
+
+### Import into Development Tools
+
+The OpenAPI specification can be imported into popular API development tools:
+
+<CardGroup cols={2}>
+  <Card title="Postman" icon="square-p">
+    Import the spec into Postman to get a complete collection of all API endpoints
+  </Card>
+
+  <Card title="Insomnia" icon="moon">
+    Load the OpenAPI file directly into Insomnia for API testing
+  </Card>
+
+  <Card title="Swagger UI" icon="eye">
+    Use Swagger UI to create an interactive API documentation interface
+  </Card>
+
+  <Card title="VS Code" icon="code">
+    Use OpenAPI extensions in VS Code for autocomplete and validation
+  </Card>
+</CardGroup>
+
+### Example: Using with Postman
+
+1. Open Postman and click **Import**
+2. Select **Link** and paste: `https://api.dnstail.com/openapi.json`
+3. Click **Import** to create a complete collection
+4. Add your API key to the collection variables
+5. Start making requests
+
+### Example: Self-Hosting API Documentation
+
+You can host your own version of the API documentation using the OpenAPI specification:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DNSTail API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: "https://api.dnstail.com/openapi.json",
+      dom_id: '#swagger-ui',
+    });
+  </script>
+</body>
+</html>
+```
+
+## Validation and Testing
+
+Use the OpenAPI specification to validate your API requests and responses:
+
+```javascript
+import { OpenAPIValidator } from 'express-openapi-validator';
+
+// Validate requests against the OpenAPI spec
+app.use(
+  OpenAPIValidator.middleware({
+    apiSpec: 'https://api.dnstail.com/openapi.json',
+    validateRequests: true,
+    validateResponses: true,
+  })
+);
+```
+
+## Version History
+
+Our API follows semantic versioning. The current version is documented in the OpenAPI specification's `info.version` field:
+
+```json
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DNSTail API",
+    "version": "1.0.0",
+    "description": "Monitor your DNS records and get notified when they change"
+  }
+}
+```
+
+<Tip>
+  Subscribe to our changelog or follow us on [X (Twitter)](https://x.com/dnstail) and [Bluesky](https://bsky.app/@dnstail.com) to get notified about API updates and new features.
+</Tip>
+
+## Support
+
+If you find any issues with the OpenAPI specification or have suggestions for improvement, please contact us at [support@dnstail.com](mailto:support@dnstail.com).

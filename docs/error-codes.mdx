@@ -1,0 +1,230 @@
+---
+title: "Error Codes"
+description: "Understanding DNSTail API error responses and how to handle them"
+---
+
+## Overview
+
+The DNSTail API uses conventional HTTP response codes to indicate the success or failure of an API request. Codes in the `2xx` range indicate success, codes in the `4xx` range indicate an error caused by the provided information, and codes in the `5xx` range indicate an error with DNSTail's servers.
+
+## Error Response Format
+
+When an error occurs, the API returns a JSON response with the following structure:
+
+```json
+{
+  "code": 400,
+  "error": "Invalid request parameters",
+  "errors": {
+    "domain": "Domain name is required",
+    "record_type": "Must be one of: A, AAAA, CNAME, MX, TXT, NS, PTR"
+  }
+}
+```
+
+<ParamField path="code" type="integer">
+  HTTP status code indicating the error type
+</ParamField>
+
+<ParamField path="error" type="string">
+  Human-readable error message describing what went wrong
+</ParamField>
+
+<ParamField path="errors" type="object">
+  Field-specific validation errors (present for 400 Bad Request responses)
+</ParamField>
+
+## HTTP Status Codes
+
+### Success Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `200` | OK | Request succeeded. The response body contains the requested data. |
+| `204` | No Content | Request succeeded with no response body (typically for DELETE operations). |
+
+### Client Error Codes
+
+<AccordionGroup>
+  <Accordion title="400 - Bad Request" icon="circle-exclamation">
+    Your request is invalid or malformed. This typically means:
+
+    - A required parameter is missing
+    - A parameter has an invalid value
+    - The request body is not valid JSON
+    - Validation constraints are not met
+
+    **Example:**
+    ```json
+    {
+      "code": 400,
+      "errors": {
+        "expected_value": "Must provide at least one value",
+        "frequency": "Must be one of: 5, 10, 15, 30, 60, 120"
+      }
+    }
+    ```
+
+    **How to fix:** Check the `errors` object in the response for specific field-level validation errors.
+  </Accordion>
+
+  <Accordion title="401 - Unauthorized" icon="lock">
+    No API key was provided in the request header.
+
+    **Example:**
+    ```json
+    {
+      "code": 401,
+      "error": "Unauthorized"
+    }
+    ```
+
+    **How to fix:** Include your API key in the `X-Api-Key` header. See [Authentication](/docs/authentication) for details.
+  </Accordion>
+
+  <Accordion title="402 - Payment Required" icon="credit-card">
+    Your request requires a premium subscription or you've reached your plan limits.
+
+    **Example:**
+    ```json
+    {
+      "code": 402,
+      "error": "Monitor limit reached. Upgrade to create more monitors."
+    }
+    ```
+
+    **How to fix:** Upgrade your plan in the [Dashboard](https://dashboard.dnstail.com) or remove existing monitors.
+  </Accordion>
+
+  <Accordion title="403 - Forbidden" icon="ban">
+    The API key provided is invalid, expired, or has been revoked.
+
+    **Example:**
+    ```json
+    {
+      "code": 403,
+      "error": "Invalid API key"
+    }
+    ```
+
+    **How to fix:** Verify your API key is correct or generate a new one from the Dashboard.
+  </Accordion>
+
+  <Accordion title="404 - Not Found" icon="magnifying-glass">
+    The requested resource does not exist or you don't have access to it.
+
+    **Example:**
+    ```json
+    {
+      "code": 404,
+      "error": "Monitor not found"
+    }
+    ```
+
+    **How to fix:** Check that the resource UUID is correct and belongs to your organization.
+  </Accordion>
+
+  <Accordion title="405 - Method Not Allowed" icon="hand">
+    The HTTP method used is not supported for this endpoint.
+
+    **Example:**
+    ```json
+    {
+      "code": 405,
+      "error": "Method not allowed"
+    }
+    ```
+
+    **How to fix:** Use the correct HTTP method (GET, POST, PATCH, DELETE) as specified in the API documentation.
+  </Accordion>
+
+  <Accordion title="429 - Too Many Requests" icon="gauge-high">
+    You've exceeded the rate limit for API requests.
+
+    **Example:**
+    ```json
+    {
+      "code": 429,
+      "error": "Rate limit exceeded"
+    }
+    ```
+
+    **How to fix:** Wait for the rate limit to reset (check `X-RateLimit-Reset` header) or implement exponential backoff. See [Rate Limiting](/docs/rate-limit) for details.
+  </Accordion>
+</AccordionGroup>
+
+### Server Error Codes
+
+<AccordionGroup>
+  <Accordion title="500 - Internal Server Error" icon="server">
+    An unexpected error occurred on DNSTail's servers.
+
+    **Example:**
+    ```json
+    {
+      "code": 500,
+      "error": "Internal server error"
+    }
+    ```
+
+    **How to fix:** This is a server-side issue. Retry your request after a brief wait. If the problem persists, contact [support@dnstail.com](mailto:support@dnstail.com).
+  </Accordion>
+
+  <Accordion title="503 - Service Unavailable" icon="triangle-exclamation">
+    The API is temporarily unavailable, typically due to maintenance.
+
+    **How to fix:** Wait a few minutes and retry your request. Check our status page for updates.
+  </Accordion>
+</AccordionGroup>
+
+## Handling Errors
+
+Here's how to properly handle errors in your code:
+
+<CodeGroup>
+```javascript JavaScript
+try {
+  const response = await fetch('https://api.dnstail.com/monitors', {
+    headers: { 'X-Api-Key': apiKey }
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error(`Error ${error.code}: ${error.error}`);
+
+    if (error.errors) {
+      // Handle validation errors
+      Object.entries(error.errors).forEach(([field, message]) => {
+        console.error(`${field}: ${message}`);
+      });
+    }
+  }
+} catch (err) {
+  console.error('Network error:', err);
+}
+```
+
+```python Python
+import requests
+
+try:
+    response = requests.get(
+        'https://api.dnstail.com/monitors',
+        headers={'X-Api-Key': api_key}
+    )
+    response.raise_for_status()
+except requests.exceptions.HTTPError as err:
+    error_data = err.response.json()
+    print(f"Error {error_data['code']}: {error_data['error']}")
+
+    if 'errors' in error_data:
+        for field, message in error_data['errors'].items():
+            print(f"{field}: {message}")
+except requests.exceptions.RequestException as err:
+    print(f"Request failed: {err}")
+```
+</CodeGroup>
+
+<Tip>
+  If you encounter an error not listed here or need assistance, contact us at [support@dnstail.com](mailto:support@dnstail.com) with the request ID from the response headers.
+</Tip>

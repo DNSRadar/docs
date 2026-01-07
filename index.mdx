@@ -1,97 +1,102 @@
 ---
 title: "Introduction"
-description: "Welcome to the new home for your documentation"
+description: "Monitor your DNS records and get notified when they change"
 ---
 
-## Setting up
+## Welcome to DNSTail API
 
-Get your documentation site up and running in minutes.
+DNSTail is a powerful DNS monitoring service that helps you track changes to your DNS records in real-time. Whether you're managing critical infrastructure, monitoring for security threats, or ensuring DNS propagation, our API provides the tools you need to stay informed.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## What is DNSTail?
 
-## Make it yours
+DNSTail continuously monitors your DNS records and alerts you immediately when changes occur. Track A, AAAA, CNAME, MX, TXT, NS, and other record types with configurable check frequencies from 5 to 120 minutes.
 
-Design a docs site that looks great and empowers your users.
+## Key Features
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Real-Time Monitoring" icon="radar">
+    Track DNS records with check frequencies as low as 5 minutes
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Change Detection" icon="bell">
+    Get instant notifications when your DNS records change
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Event History" icon="clock-rotate-left">
+    Access complete history of all DNS changes detected
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Webhook Integration" icon="webhook">
+    Integrate with your existing workflows using webhooks
   </Card>
-</Columns>
+  <Card title="Bulk Operations" icon="layer-group">
+    Create and manage up to 1000 monitors at once
+  </Card>
+  <Card title="Organized Monitoring" icon="folder-tree">
+    Group monitors for better organization and management
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## Getting Started
 
-Everything you need to create world-class documentation.
+Get up and running with DNSTail in minutes:
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+<Steps>
+  <Step title="Get Your API Key">
+    Sign up at [dashboard.dnstail.com](https://dashboard.dnstail.com) and generate your API key
+  </Step>
+  <Step title="Authenticate">
+    Include your API key in the `X-Api-Key` header with every request
+  </Step>
+  <Step title="Create a Monitor">
+    Set up your first DNS monitor to track changes to your records
+  </Step>
+  <Step title="Configure Webhooks">
+    Add webhook endpoints to receive notifications when changes occur
+  </Step>
+</Steps>
 
-## Need inspiration?
+## Quick Example
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+Here's how to create your first DNS monitor:
+
+```bash
+curl -X POST https://api.dnstail.com/monitors \
+  -H "X-Api-Key: your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "example.com",
+    "subdomain": "www",
+    "record_type": "A",
+    "expected_value": ["192.168.1.1"],
+    "frequency": 60
+  }'
+```
+
+## Use Cases
+
+- **Security Monitoring**: Detect unauthorized DNS changes that could indicate hijacking attempts
+- **Infrastructure Management**: Track DNS propagation and ensure your records are configured correctly
+- **Compliance**: Maintain audit trails of all DNS changes for compliance requirements
+- **DevOps Integration**: Automate DNS monitoring as part of your deployment pipelines
+- **Multi-Team Coordination**: Share monitoring responsibilities across teams with grouped monitors
+
+## API Overview
+
+The DNSTail API is organized around REST principles with predictable resource-oriented URLs. We use standard HTTP response codes, authentication, and verbs. All API responses are returned in JSON format.
+
+**Base URL**: `https://api.dnstail.com`
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/docs/openapi">
+    Explore all available endpoints and parameters
+  </Card>
+  <Card title="Authentication" icon="key" href="/docs/authentication">
+    Learn how to authenticate your API requests
+  </Card>
+  <Card title="Support" icon="life-ring" href="mailto:support@dnstail.com">
+    Get help from our support team
+  </Card>
+  <Card title="Dashboard" icon="gauge" href="https://dashboard.dnstail.com">
+    Manage your monitors via web interface
+  </Card>
+</CardGroup>

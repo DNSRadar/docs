@@ -1,0 +1,237 @@
+---
+title: "Rate Limiting"
+description: "Understanding API rate limits and how to handle them effectively"
+---
+
+## Overview
+
+The DNSTail API implements rate limiting to ensure fair usage and maintain service quality for all users. Rate limits are applied per API key and reset at fixed intervals.
+
+<Info>
+  All rate limits use a sliding window algorithm, meaning limits reset continuously rather than at fixed intervals.
+</Info>
+
+## Rate Limit Tiers
+
+### Standard Endpoints
+
+Most API endpoints follow these rate limits:
+
+<CardGroup cols={2}>
+  <Card title="Read Operations" icon="book-open">
+    **20 requests per minute**
+
+    Applies to all `GET` requests
+  </Card>
+
+  <Card title="Write Operations" icon="pen-to-square">
+    **5 requests per minute**
+
+    Applies to `POST`, `PUT`, `PATCH`, and `DELETE` requests
+  </Card>
+</CardGroup>
+
+### Bulk Import Endpoints
+
+The following endpoints have higher limits to support bulk operations:
+
+<Card title="Monitor Creation" icon="gauge-max">
+  **250 requests per minute**
+
+  Applies to:
+  - `POST /monitors`
+  - `POST /monitors/bulk`
+</Card>
+
+<Note>
+  The `POST /monitors/bulk` endpoint accepts up to 1,000 monitors per request, allowing you to theoretically import **250,000 monitors per minute** when used efficiently.
+</Note>
+
+## Rate Limit Headers
+
+Every API response includes headers that provide information about your current rate limit status:
+
+<ParamField header="X-RateLimit-Limit" type="integer">
+  The maximum number of requests you can make per minute for this endpoint
+
+  **Example:** `20`
+</ParamField>
+
+<ParamField header="X-RateLimit-Remaining" type="integer">
+  The number of requests remaining in the current rate limit window
+
+  **Example:** `15`
+</ParamField>
+
+<ParamField header="X-RateLimit-Reset" type="integer">
+  Unix timestamp (in seconds) indicating when the rate limit window resets
+
+  **Example:** `1704636000`
+</ParamField>
+
+### Example Response Headers
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 20
+X-RateLimit-Remaining: 15
+X-RateLimit-Reset: 1704636000
+Content-Type: application/json
+```
+
+## Handling Rate Limits
+
+### Rate Limit Exceeded Response
+
+When you exceed the rate limit, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "code": 429,
+  "error": "Rate limit exceeded. Please try again in 45 seconds."
+}
+```
+
+### Best Practices
+
+<AccordionGroup>
+  <Accordion title="Monitor Rate Limit Headers" icon="chart-line">
+    Always check the `X-RateLimit-Remaining` header and proactively slow down requests before hitting the limit.
+
+    ```javascript
+    const remaining = parseInt(response.headers.get('X-RateLimit-Remaining'));
+
+    if (remaining < 3) {
+      console.warn('Approaching rate limit. Slowing down requests...');
+      await sleep(5000); // Wait 5 seconds
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Implement Exponential Backoff" icon="clock-rotate-left">
+    When you receive a 429 response, wait before retrying with increasing delays between attempts.
+
+    ```javascript
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      for (let i = 0; i < maxRetries; i++) {
+        const response = await fetch(url, options);
+
+        if (response.status !== 429) {
+          return response;
+        }
+
+        const resetTime = parseInt(response.headers.get('X-RateLimit-Reset'));
+        const waitTime = (resetTime * 1000) - Date.now();
+
+        console.log(`Rate limited. Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+
+      throw new Error('Max retries exceeded');
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use Bulk Endpoints" icon="layer-group">
+    When creating multiple monitors, use the `POST /monitors/bulk` endpoint instead of making individual requests.
+
+    **Instead of this:**
+    ```javascript
+    // 1000 requests = exceeds rate limit
+    for (const monitor of monitors) {
+      await createMonitor(monitor);
+    }
+    ```
+
+    **Do this:**
+    ```javascript
+    // 1 request = efficient
+    await createMonitorsBulk(monitors); // up to 1000 at once
+    ```
+  </Accordion>
+
+  <Accordion title="Cache GET Requests" icon="database">
+    Cache responses from GET requests when appropriate to reduce unnecessary API calls.
+
+    ```javascript
+    const cache = new Map();
+    const CACHE_TTL = 60000; // 1 minute
+
+    async function getCachedMonitors() {
+      const cached = cache.get('monitors');
+
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+
+      const data = await fetchMonitors();
+      cache.set('monitors', { data, timestamp: Date.now() });
+      return data;
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Distribute Requests Over Time" icon="calendar-days">
+    Instead of sending bursts of requests, distribute them evenly across the rate limit window.
+
+    ```javascript
+    // Spread 20 requests over 60 seconds (1 per 3 seconds)
+    const delayBetweenRequests = 60000 / 20; // 3000ms
+
+    for (const item of items) {
+      await processItem(item);
+      await sleep(delayBetweenRequests);
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Rate Limit Examples
+
+### Checking Rate Limit Status
+
+<CodeGroup>
+```javascript JavaScript
+const response = await fetch('https://api.dnstail.com/monitors', {
+  headers: { 'X-Api-Key': apiKey }
+});
+
+const limit = response.headers.get('X-RateLimit-Limit');
+const remaining = response.headers.get('X-RateLimit-Remaining');
+const reset = response.headers.get('X-RateLimit-Reset');
+
+console.log(`Rate Limit: ${remaining}/${limit} requests remaining`);
+console.log(`Resets at: ${new Date(reset * 1000).toISOString()}`);
+```
+
+```python Python
+import requests
+from datetime import datetime
+
+response = requests.get(
+    'https://api.dnstail.com/monitors',
+    headers={'X-Api-Key': api_key}
+)
+
+limit = response.headers.get('X-RateLimit-Limit')
+remaining = response.headers.get('X-RateLimit-Remaining')
+reset = int(response.headers.get('X-RateLimit-Reset'))
+
+print(f"Rate Limit: {remaining}/{limit} requests remaining")
+print(f"Resets at: {datetime.fromtimestamp(reset).isoformat()}")
+```
+
+```bash cURL
+curl -i https://api.dnstail.com/monitors \
+  -H "X-Api-Key: your_api_key"
+
+# Look for these headers in the response:
+# X-RateLimit-Limit: 20
+# X-RateLimit-Remaining: 15
+# X-RateLimit-Reset: 1704636000
+```
+</CodeGroup>
+
+<Tip>
+  Need higher rate limits? Contact our [sales team](mailto:support@dnstail.com) to discuss enterprise plans with custom rate limits.
+</Tip>

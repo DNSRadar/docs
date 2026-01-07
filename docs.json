@@ -1,87 +1,101 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "theme": "almond",
+  "name": "DNSTail Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#dc2626",
+    "light": "#dc2626",
+    "dark": "#dc2626"
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "tabs": [
+    "pages": [
+      "index",
+      "docs/authentication",
+      "docs/rate-limit",
+      "docs/error-codes",
+      "docs/openapi",
       {
-        "tab": "Guides",
-        "groups": [
+        "group": "API Reference",
+        "openapi": "./openapi.json",
+        "pages": [
           {
-            "group": "Getting started",
+            "group": "Account",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "GET /agents",
+              "GET /organization",
+              "PATCH /organization"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Monitors",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "GET /monitors",
+              "POST /monitors",
+              "POST /monitors/bulk",
+              "GET /monitors/{uuid}",
+              "PATCH /monitors/{uuid}",
+              "DELETE /monitors/{uuid}",
+              {
+                "group": "Enable/Disable",
+                "pages": [
+                  "POST /monitors/{uuid}/enable",
+                  "POST /monitors/{uuid}/disable"
+                ]
+              },
+              {
+                "group": "Events",
+                "pages": [
+                  "GET /monitors/{monitor_uuid}/events",
+                  "GET /monitors/{monitor_uuid}/events/{uuid}"
+                ]
+              }
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Groups",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "GET /groups",
+              "POST /groups",
+              "GET /groups/{slug}",
+              "PATCH /groups/{slug}",
+              "DELETE /groups/{slug}",
+              "GET /groups/{slug}/monitors",
+              "PATCH /groups/{slug}/monitors"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Webhooks",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "GET /webhooks",
+              "POST /webhooks",
+              "GET /webhooks/{uuid}",
+              "PATCH /webhooks/{uuid}",
+              "DELETE /webhooks/{uuid}",
+              {
+                "group": "Enable/Disable",
+                "pages": [
+                  "POST /webhooks/{uuid}/enable",
+                  "POST /webhooks/{uuid}/disable"
+                ]
+              },
+              {
+                "group": "Test",
+                "pages": [
+                  "POST /webhooks/{uuid}/test"
+                ]
+              },
+              {
+                "group": "Requests",
+                "pages": [
+                  "GET /webhooks/{uuid}/requests"
+                ]
+              }
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -91,32 +105,28 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@dnstail.com"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://dashboard.dnstail.com"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/dnstail",
+      "bluesky": "https://bsky.app/@dnstail.com"
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "javascript", "python", "ruby", "go", "php", "java"],
+      "defaults": "required"
     }
   }
 }
