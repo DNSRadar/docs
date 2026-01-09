@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "almond",
-  "name": "DNSTail Documentation",
+  "name": "DNSRadar Documentation",
   "colors": {
     "primary": "#dc2626",
     "light": "#dc2626",
@@ -13,7 +13,9 @@
       "index",
       "docs/authentication",
       "docs/rate-limit",
+      "docs/pagination",
       "docs/error-codes",
+      "docs/webhooks",
       "docs/openapi",
       {
         "group": "API Reference",
@@ -23,8 +25,7 @@
             "group": "Account",
             "pages": [
               "GET /agents",
-              "GET /organization",
-              "PATCH /organization"
+              "GET /organization"
             ]
           },
           {
@@ -88,7 +89,8 @@
               {
                 "group": "Requests",
                 "pages": [
-                  "GET /webhooks/{uuid}/requests"
+                  "GET /webhooks/{uuid}/requests",
+                  "POST /webhooks/{webhook_uuid}/requests/{uuid}/retry"
                 ]
               }
             ]
@@ -105,19 +107,19 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@dnstail.com"
+        "href": "mailto:support@dnsradar.dev"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.dnstail.com"
+      "href": "https://dashboard.dnsradar.dev"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/dnstail",
-      "bluesky": "https://bsky.app/@dnstail.com"
+      "x": "https://x.com/dnsradardev",
+      "bluesky": "https://bsky.app/@dnsradar.dev"
     }
   },
   "api": {

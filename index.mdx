@@ -3,13 +3,13 @@ title: "Introduction"
 description: "Monitor your DNS records and get notified when they change"
 ---
 
-## Welcome to DNSTail API
+## Welcome to DNSRadar API
 
-DNSTail is a powerful DNS monitoring service that helps you track changes to your DNS records in real-time. Whether you're managing critical infrastructure, monitoring for security threats, or ensuring DNS propagation, our API provides the tools you need to stay informed.
+DNSRadar is a powerful DNS monitoring service that helps you track changes to your DNS records in real-time. Whether you're managing critical infrastructure, monitoring for security threats, or ensuring DNS propagation, our API provides the tools you need to stay informed.
 
-## What is DNSTail?
+## What is DNSRadar?
 
-DNSTail continuously monitors your DNS records and alerts you immediately when changes occur. Track A, AAAA, CNAME, MX, TXT, NS, and other record types with configurable check frequencies from 5 to 120 minutes.
+DNSRadar continuously monitors your DNS records and alerts you immediately when changes occur. Track A, AAAA, CNAME, MX, TXT, NS, and other record types with configurable check frequencies from 5 to 120 minutes.
 
 ## Key Features
 
@@ -36,11 +36,11 @@ DNSTail continuously monitors your DNS records and alerts you immediately when c
 
 ## Getting Started
 
-Get up and running with DNSTail in minutes:
+Get up and running with DNSRadar in minutes:
 
 <Steps>
   <Step title="Get Your API Key">
-    Sign up at [dashboard.dnstail.com](https://dashboard.dnstail.com) and generate your API key
+    Sign up at [dashboard.dnsradar.dev](https://dashboard.dnsradar.dev) and generate your API key
   </Step>
   <Step title="Authenticate">
     Include your API key in the `X-Api-Key` header with every request
@@ -58,7 +58,7 @@ Get up and running with DNSTail in minutes:
 Here's how to create your first DNS monitor:
 
 ```bash
-curl -X POST https://api.dnstail.com/monitors \
+curl -X POST https://api.dnsradar.dev/monitors \
   -H "X-Api-Key: your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -80,9 +80,9 @@ curl -X POST https://api.dnstail.com/monitors \
 
 ## API Overview
 
-The DNSTail API is organized around REST principles with predictable resource-oriented URLs. We use standard HTTP response codes, authentication, and verbs. All API responses are returned in JSON format.
+The DNSRadar API is organized around REST principles with predictable resource-oriented URLs. We use standard HTTP response codes, authentication, and verbs. All API responses are returned in JSON format.
 
-**Base URL**: `https://api.dnstail.com`
+**Base URL**: `https://api.dnsradar.dev`
 
 ## Need Help?
 
@@ -93,10 +93,10 @@ The DNSTail API is organized around REST principles with predictable resource-or
   <Card title="Authentication" icon="key" href="/docs/authentication">
     Learn how to authenticate your API requests
   </Card>
-  <Card title="Support" icon="life-ring" href="mailto:support@dnstail.com">
+  <Card title="Support" icon="life-ring" href="mailto:support@dnsradar.dev">
     Get help from our support team
   </Card>
-  <Card title="Dashboard" icon="gauge" href="https://dashboard.dnstail.com">
+  <Card title="Dashboard" icon="gauge" href="https://dashboard.dnsradar.dev">
     Manage your monitors via web interface
   </Card>
 </CardGroup>

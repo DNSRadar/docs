@@ -1,11 +1,11 @@
 ---
 title: "Authentication"
-description: "Learn how to authenticate your API requests with DNSTail"
+description: "Learn how to authenticate your API requests with DNSRadar"
 ---
 
 ## API Key Authentication
 
-The DNSTail API uses API keys to authenticate requests. All API requests must include your secret API key in the request header to identify your account and authorize access.
+The DNSRadar API uses API keys to authenticate requests. All API requests must include your secret API key in the request header to identify your account and authorize access.
 
 <Warning>
   Your API keys carry significant privileges. Keep them secure and never share them in publicly accessible areas such as GitHub, client-side code, or public repositories.
@@ -13,7 +13,7 @@ The DNSTail API uses API keys to authenticate requests. All API requests must in
 
 ## Getting Your API Key
 
-You can create and manage your API keys from the [DNSTail Dashboard](https://dashboard.dnstail.com):
+You can create and manage your API keys from the [DNSRadar Dashboard](https://dashboard.dnsradar.dev):
 
 1. Log in to your account
 2. Navigate to Settings → API Keys
@@ -30,12 +30,12 @@ Include your API key in the `X-Api-Key` header with every request:
 
 <CodeGroup>
 ```bash cURL
-curl https://api.dnstail.com/monitors \
+curl https://api.dnsradar.dev/monitors \
   -H "X-Api-Key: sk_your_api_key_here"
 ```
 
 ```javascript JavaScript
-const response = await fetch('https://api.dnstail.com/monitors', {
+const response = await fetch('https://api.dnsradar.dev/monitors', {
   headers: {
     'X-Api-Key': 'sk_your_api_key_here'
   }
@@ -49,11 +49,11 @@ headers = {
     'X-Api-Key': 'sk_your_api_key_here'
 }
 
-response = requests.get('https://api.dnstail.com/monitors', headers=headers)
+response = requests.get('https://api.dnsradar.dev/monitors', headers=headers)
 ```
 
 ```php PHP
-$ch = curl_init('https://api.dnstail.com/monitors');
+$ch = curl_init('https://api.dnsradar.dev/monitors');
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'X-Api-Key: sk_your_api_key_here'
 ]);

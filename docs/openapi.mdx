@@ -1,17 +1,17 @@
 ---
 title: "OpenAPI Specification"
-description: "Access the complete OpenAPI specification for the DNSTail API"
+description: "Access the complete OpenAPI specification for the DNSRadar API"
 ---
 
 ## Overview
 
-The DNSTail API is fully documented using the OpenAPI 3.0 specification (formerly known as Swagger). This machine-readable format allows you to automatically generate client libraries, test your API integration, and import the API into various development tools.
+The DNSRadar API is fully documented using the OpenAPI 3.0 specification (formerly known as Swagger). This machine-readable format allows you to automatically generate client libraries, test your API integration, and import the API into various development tools.
 
 ## Download the Specification
 
 You can access our complete OpenAPI specification file here:
 
-<Card title="OpenAPI Specification" icon="file-code" href="https://api.dnstail.com/openapi.json">
+<Card title="OpenAPI Specification" icon="file-code" href="https://api.dnsradar.dev/openapi.json">
   Download the latest OpenAPI 3.0 JSON specification
 </Card>
 
@@ -62,23 +62,23 @@ npm install @openapitools/openapi-generator-cli -g
 
 # Generate a Python client
 openapi-generator-cli generate \
-  -i https://api.dnstail.com/openapi.json \
+  -i https://api.dnsradar.dev/openapi.json \
   -g python \
-  -o ./dnstail-python-client
+  -o ./dnsradar-python-client
 
 # Generate a JavaScript/TypeScript client
 openapi-generator-cli generate \
-  -i https://api.dnstail.com/openapi.json \
+  -i https://api.dnsradar.dev/openapi.json \
   -g typescript-fetch \
-  -o ./dnstail-ts-client
+  -o ./dnsradar-ts-client
 ```
 
 ```bash Swagger Codegen
 # Using Swagger Codegen
 swagger-codegen generate \
-  -i https://api.dnstail.com/openapi.json \
+  -i https://api.dnsradar.dev/openapi.json \
   -l ruby \
-  -o ./dnstail-ruby-client
+  -o ./dnsradar-ruby-client
 ```
 </CodeGroup>
 
@@ -107,7 +107,7 @@ The OpenAPI specification can be imported into popular API development tools:
 ### Example: Using with Postman
 
 1. Open Postman and click **Import**
-2. Select **Link** and paste: `https://api.dnstail.com/openapi.json`
+2. Select **Link** and paste: `https://api.dnsradar.dev/openapi.json`
 3. Click **Import** to create a complete collection
 4. Add your API key to the collection variables
 5. Start making requests
@@ -120,7 +120,7 @@ You can host your own version of the API documentation using the OpenAPI specifi
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DNSTail API Documentation</title>
+  <title>DNSRadar API Documentation</title>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
 </head>
 <body>
@@ -128,7 +128,7 @@ You can host your own version of the API documentation using the OpenAPI specifi
   <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
   <script>
     SwaggerUIBundle({
-      url: "https://api.dnstail.com/openapi.json",
+      url: "https://api.dnsradar.dev/openapi.json",
       dom_id: '#swagger-ui',
     });
   </script>
@@ -146,7 +146,7 @@ import { OpenAPIValidator } from 'express-openapi-validator';
 // Validate requests against the OpenAPI spec
 app.use(
   OpenAPIValidator.middleware({
-    apiSpec: 'https://api.dnstail.com/openapi.json',
+    apiSpec: 'https://api.dnsradar.dev/openapi.json',
     validateRequests: true,
     validateResponses: true,
   })
@@ -161,7 +161,7 @@ Our API follows semantic versioning. The current version is documented in the Op
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "DNSTail API",
+    "title": "DNSRadar API",
     "version": "1.0.0",
     "description": "Monitor your DNS records and get notified when they change"
   }
@@ -169,9 +169,9 @@ Our API follows semantic versioning. The current version is documented in the Op
 ```
 
 <Tip>
-  Subscribe to our changelog or follow us on [X (Twitter)](https://x.com/dnstail) and [Bluesky](https://bsky.app/@dnstail.com) to get notified about API updates and new features.
+  Subscribe to our changelog or follow us on [X (Twitter)](https://x.com/dnsradardev) and [Bluesky](https://bsky.app/@dnsradar.dev) to get notified about API updates and new features.
 </Tip>
 
 ## Support
 
-If you find any issues with the OpenAPI specification or have suggestions for improvement, please contact us at [support@dnstail.com](mailto:support@dnstail.com).
+If you find any issues with the OpenAPI specification or have suggestions for improvement, please contact us at [support@dnsradar.dev](mailto:support@dnsradar.dev).

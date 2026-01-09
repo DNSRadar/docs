@@ -1,11 +1,11 @@
 ---
 title: "Error Codes"
-description: "Understanding DNSTail API error responses and how to handle them"
+description: "Understanding DNSRadar API error responses and how to handle them"
 ---
 
 ## Overview
 
-The DNSTail API uses conventional HTTP response codes to indicate the success or failure of an API request. Codes in the `2xx` range indicate success, codes in the `4xx` range indicate an error caused by the provided information, and codes in the `5xx` range indicate an error with DNSTail's servers.
+The DNSRadar API uses conventional HTTP response codes to indicate the success or failure of an API request. Codes in the `2xx` range indicate success, codes in the `4xx` range indicate an error caused by the provided information, and codes in the `5xx` range indicate an error with DNSRadar's servers.
 
 ## Error Response Format
 
@@ -93,7 +93,7 @@ When an error occurs, the API returns a JSON response with the following structu
     }
     ```
 
-    **How to fix:** Upgrade your plan in the [Dashboard](https://dashboard.dnstail.com) or remove existing monitors.
+    **How to fix:** Upgrade your plan in the [Dashboard](https://dashboard.dnsradar.dev) or remove existing monitors.
   </Accordion>
 
   <Accordion title="403 - Forbidden" icon="ban">
@@ -157,7 +157,7 @@ When an error occurs, the API returns a JSON response with the following structu
 
 <AccordionGroup>
   <Accordion title="500 - Internal Server Error" icon="server">
-    An unexpected error occurred on DNSTail's servers.
+    An unexpected error occurred on DNSRadar's servers.
 
     **Example:**
     ```json
@@ -167,7 +167,7 @@ When an error occurs, the API returns a JSON response with the following structu
     }
     ```
 
-    **How to fix:** This is a server-side issue. Retry your request after a brief wait. If the problem persists, contact [support@dnstail.com](mailto:support@dnstail.com).
+    **How to fix:** This is a server-side issue. Retry your request after a brief wait. If the problem persists, contact [support@dnsradar.dev](mailto:support@dnsradar.dev).
   </Accordion>
 
   <Accordion title="503 - Service Unavailable" icon="triangle-exclamation">
@@ -184,7 +184,7 @@ Here's how to properly handle errors in your code:
 <CodeGroup>
 ```javascript JavaScript
 try {
-  const response = await fetch('https://api.dnstail.com/monitors', {
+  const response = await fetch('https://api.dnsradar.dev/monitors', {
     headers: { 'X-Api-Key': apiKey }
   });
 
@@ -209,7 +209,7 @@ import requests
 
 try:
     response = requests.get(
-        'https://api.dnstail.com/monitors',
+        'https://api.dnsradar.dev/monitors',
         headers={'X-Api-Key': api_key}
     )
     response.raise_for_status()
@@ -226,5 +226,5 @@ except requests.exceptions.RequestException as err:
 </CodeGroup>
 
 <Tip>
-  If you encounter an error not listed here or need assistance, contact us at [support@dnstail.com](mailto:support@dnstail.com) with the request ID from the response headers.
+  If you encounter an error not listed here or need assistance, contact us at [support@dnsradar.dev](mailto:support@dnsradar.dev) with the request ID from the response headers.
 </Tip>

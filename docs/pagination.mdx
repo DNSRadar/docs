@@ -1,0 +1,776 @@
+---
+title: "Pagination"
+description: "Learn how to paginate through large result sets in the DNSRadar API"
+---
+
+## Overview
+
+The DNSRadar API uses cursor-based pagination for all list endpoints. This approach provides consistent results even when data is being modified, making it ideal for reliable data synchronization and iteration.
+
+<Info>
+  Cursor-based pagination ensures you never miss items or see duplicates, even if data changes between requests.
+</Info>
+
+## Pagination Parameters
+
+All paginated endpoints accept the following query parameters:
+
+<ParamField query="limit" type="integer" default={20}>
+  Number of items to return per page
+
+  **Range:** 1-100 items
+
+  **Default:** 20 items
+</ParamField>
+
+<ParamField query="after" type="string">
+  Cursor for fetching the next page of results
+
+  Use the `after` value from the previous response to get the next page
+</ParamField>
+
+<ParamField query="before" type="string">
+  Cursor for fetching the previous page of results
+
+  Use the `before` value from the previous response to get the previous page
+</ParamField>
+
+<ParamField query="order_by" type="string">
+  Field to order results by
+
+  Available fields depend on the endpoint (e.g., `created`, `domain`, `name`)
+</ParamField>
+
+<ParamField query="order_way" type="string" default="asc">
+  Sort direction
+
+  **Values:** `asc` (ascending) or `desc` (descending)
+
+  **Default:** `asc`
+</ParamField>
+
+## Response Structure
+
+All paginated responses follow this structure:
+
+```json
+{
+  "limit": 20,
+  "after": "eyJpZCI6MTIzNDU2fQ==",
+  "before": "eyJpZCI6MTIzNDAwfQ==",
+  "has_more": true,
+  "data": [
+    // Array of items
+  ]
+}
+```
+
+### Response Fields
+
+<ParamField path="limit" type="integer">
+  The number of items per page requested
+</ParamField>
+
+<ParamField path="after" type="string | null">
+  Cursor to fetch the next page of results
+
+  `null` if there are no more pages
+</ParamField>
+
+<ParamField path="before" type="string | null">
+  Cursor to fetch the previous page of results
+
+  `null` if this is the first page
+</ParamField>
+
+<ParamField path="has_more" type="boolean">
+  Indicates whether there are more items after the current page
+
+  Use this to determine if you should fetch the next page
+</ParamField>
+
+<ParamField path="data" type="array">
+  Array of items for the current page
+</ParamField>
+
+## Paginated Endpoints
+
+The following endpoints support pagination:
+
+- `GET /agents` - List team members
+- `GET /monitors` - List DNS monitors
+- `GET /monitors/{monitor_uuid}/events` - List events for a monitor
+- `GET /groups` - List monitor groups
+- `GET /groups/{slug}/monitors` - List monitors in a group
+- `GET /webhooks` - List webhooks
+- `GET /webhooks/{uuid}/requests` - List webhook execution requests
+
+## Basic Pagination
+
+### Fetching the First Page
+
+To get the first page of results, simply call the endpoint without any cursor parameters:
+
+<CodeGroup>
+```bash cURL
+curl "https://api.dnsradar.dev/monitors?limit=20" \
+  -H "X-Api-Key: sk_your_api_key_here"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.dnsradar.dev/monitors?limit=20',
+  {
+    headers: {
+      'X-Api-Key': 'sk_your_api_key_here'
+    }
+  }
+);
+
+const data = await response.json();
+console.log(`Fetched ${data.data.length} monitors`);
+console.log(`Has more pages: ${data.has_more}`);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.dnsradar.dev/monitors',
+    params={'limit': 20},
+    headers={'X-Api-Key': 'sk_your_api_key_here'}
+)
+
+data = response.json()
+print(f"Fetched {len(data['data'])} monitors")
+print(f"Has more pages: {data['has_more']}")
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "net/url"
+)
+
+type PaginatedResponse struct {
+    Limit   int           `json:"limit"`
+    After   *string       `json:"after"`
+    Before  *string       `json:"before"`
+    HasMore bool          `json:"has_more"`
+    Data    []interface{} `json:"data"`
+}
+
+func main() {
+    apiKey := "sk_your_api_key_here"
+
+    params := url.Values{}
+    params.Add("limit", "20")
+
+    req, _ := http.NewRequest("GET",
+        "https://api.dnsradar.dev/monitors?"+params.Encode(),
+        nil)
+    req.Header.Set("X-Api-Key", apiKey)
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+
+    var result PaginatedResponse
+    json.Unmarshal(body, &result)
+
+    fmt.Printf("Fetched %d monitors\n", len(result.Data))
+    fmt.Printf("Has more pages: %t\n", result.HasMore)
+}
+```
+
+```php PHP
+<?php
+$apiKey = 'sk_your_api_key_here';
+
+$ch = curl_init('https://api.dnsradar.dev/monitors?limit=20');
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'X-Api-Key: ' . $apiKey
+]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+$response = curl_exec($ch);
+$data = json_decode($response, true);
+
+echo "Fetched " . count($data['data']) . " monitors\n";
+echo "Has more pages: " . ($data['has_more'] ? 'true' : 'false') . "\n";
+?>
+```
+</CodeGroup>
+
+### Fetching the Next Page
+
+Use the `after` cursor from the response to fetch the next page:
+
+<CodeGroup>
+```bash cURL
+curl "https://api.dnsradar.dev/monitors?limit=20&after=eyJpZCI6MTIzNDU2fQ==" \
+  -H "X-Api-Key: sk_your_api_key_here"
+```
+
+```javascript JavaScript
+let allMonitors = [];
+let after = null;
+
+do {
+  const url = new URL('https://api.dnsradar.dev/monitors');
+  url.searchParams.set('limit', '20');
+  if (after) {
+    url.searchParams.set('after', after);
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      'X-Api-Key': 'sk_your_api_key_here'
+    }
+  });
+
+  const data = await response.json();
+  allMonitors.push(...data.data);
+
+  after = data.after;
+} while (after !== null);
+
+console.log(`Fetched ${allMonitors.length} monitors total`);
+```
+
+```python Python
+import requests
+
+all_monitors = []
+after = None
+
+while True:
+    params = {'limit': 20}
+    if after:
+        params['after'] = after
+
+    response = requests.get(
+        'https://api.dnsradar.dev/monitors',
+        params=params,
+        headers={'X-Api-Key': 'sk_your_api_key_here'}
+    )
+
+    data = response.json()
+    all_monitors.extend(data['data'])
+
+    after = data.get('after')
+    if not after:
+        break
+
+print(f"Fetched {len(all_monitors)} monitors total")
+```
+
+```go Go
+func fetchAllMonitors(apiKey string) ([]interface{}, error) {
+    var allMonitors []interface{}
+    var after *string
+
+    for {
+        params := url.Values{}
+        params.Add("limit", "20")
+        if after != nil {
+            params.Add("after", *after)
+        }
+
+        req, _ := http.NewRequest("GET",
+            "https://api.dnsradar.dev/monitors?"+params.Encode(),
+            nil)
+        req.Header.Set("X-Api-Key", apiKey)
+
+        client := &http.Client{}
+        resp, err := client.Do(req)
+        if err != nil {
+            return nil, err
+        }
+
+        body, _ := io.ReadAll(resp.Body)
+        resp.Body.Close()
+
+        var result PaginatedResponse
+        json.Unmarshal(body, &result)
+
+        allMonitors = append(allMonitors, result.Data...)
+
+        if result.After == nil {
+            break
+        }
+        after = result.After
+    }
+
+    return allMonitors, nil
+}
+```
+
+```php PHP
+<?php
+function fetchAllMonitors($apiKey) {
+    $allMonitors = [];
+    $after = null;
+
+    do {
+        $url = 'https://api.dnsradar.dev/monitors?limit=20';
+        if ($after !== null) {
+            $url .= '&after=' . urlencode($after);
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'X-Api-Key: ' . $apiKey
+        ]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+        $data = json_decode($response, true);
+
+        $allMonitors = array_merge($allMonitors, $data['data']);
+        $after = $data['after'];
+
+        curl_close($ch);
+    } while ($after !== null);
+
+    return $allMonitors;
+}
+?>
+```
+</CodeGroup>
+
+## Sorting Results
+
+You can control the sort order of results using `order_by` and `order_way` parameters:
+
+<CodeGroup>
+```bash cURL - Newest First
+curl "https://api.dnsradar.dev/monitors?order_by=created&order_way=desc&limit=20" \
+  -H "X-Api-Key: sk_your_api_key_here"
+```
+
+```bash cURL - Alphabetical
+curl "https://api.dnsradar.dev/monitors?order_by=domain&order_way=asc&limit=20" \
+  -H "X-Api-Key: sk_your_api_key_here"
+```
+
+```javascript JavaScript
+// Fetch monitors sorted by creation date (newest first)
+const response = await fetch(
+  'https://api.dnsradar.dev/monitors?order_by=created&order_way=desc&limit=20',
+  {
+    headers: {
+      'X-Api-Key': 'sk_your_api_key_here'
+    }
+  }
+);
+```
+
+```python Python
+# Fetch monitors sorted alphabetically by domain
+response = requests.get(
+    'https://api.dnsradar.dev/monitors',
+    params={
+        'order_by': 'domain',
+        'order_way': 'asc',
+        'limit': 20
+    },
+    headers={'X-Api-Key': 'sk_your_api_key_here'}
+)
+```
+</CodeGroup>
+
+## Navigating Backwards
+
+Use the `before` cursor to navigate to the previous page:
+
+```javascript
+// After navigating forward several pages
+const response = await fetch(
+  `https://api.dnsradar.dev/monitors?limit=20&before=${beforeCursor}`,
+  {
+    headers: {
+      'X-Api-Key': 'sk_your_api_key_here'
+    }
+  }
+);
+```
+
+<Note>
+  The `before` cursor is useful for implementing "Previous" buttons in pagination UI or for backward navigation in your application.
+</Note>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Appropriate Page Sizes" icon="list">
+    Choose page sizes based on your use case:
+
+    - **Small pages (10-20):** Good for UI display, faster response times
+    - **Medium pages (50):** Balanced for most applications
+    - **Large pages (100):** Efficient for bulk processing, fewer API calls
+
+    ```javascript
+    // For UI display
+    const uiResponse = await fetch(
+      'https://api.dnsradar.dev/monitors?limit=10'
+    );
+
+    // For bulk processing
+    const bulkResponse = await fetch(
+      'https://api.dnsradar.dev/monitors?limit=100'
+    );
+    ```
+  </Accordion>
+
+  <Accordion title="Check has_more Before Fetching" icon="circle-check">
+    Always check the `has_more` field to avoid unnecessary requests:
+
+    ```javascript
+    const data = await fetchPage();
+
+    if (data.has_more) {
+      // Fetch next page
+      const nextPage = await fetchPage(data.after);
+    } else {
+      console.log('Reached the end of results');
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Handle Empty Results" icon="inbox">
+    Empty result sets are valid and should be handled gracefully:
+
+    ```python
+    data = response.json()
+
+    if len(data['data']) == 0:
+        print("No items found")
+    else:
+        for item in data['data']:
+            process_item(item)
+    ```
+  </Accordion>
+
+  <Accordion title="Store Cursors for Resumption" icon="bookmark">
+    Save the `after` cursor to resume pagination later:
+
+    ```javascript
+    // Save progress
+    localStorage.setItem('lastCursor', data.after);
+
+    // Resume later
+    const lastCursor = localStorage.getItem('lastCursor');
+    if (lastCursor) {
+      const response = await fetch(
+        `https://api.dnsradar.dev/monitors?after=${lastCursor}`
+      );
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Don't Assume Fixed Page Sizes" icon="triangle-exclamation">
+    The actual number of items returned may be less than the requested limit, even if more pages exist:
+
+    ```javascript
+    // Don't do this
+    if (data.data.length < limit) {
+      // Wrong assumption: might not be the last page
+    }
+
+    // Do this instead
+    if (data.has_more) {
+      // Correctly check for more pages
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Respect Rate Limits" icon="gauge">
+    When iterating through all pages, respect rate limits by adding delays:
+
+    ```python
+    import time
+
+    after = None
+    while True:
+        data = fetch_page(after)
+        process_data(data['data'])
+
+        after = data.get('after')
+        if not after:
+            break
+
+        # Add delay to respect rate limits
+        time.sleep(0.5)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Complete Example: Paginated Export
+
+Here's a complete example of exporting all monitors to a CSV file:
+
+<CodeGroup>
+```javascript Node.js
+import fs from 'fs';
+
+async function exportMonitorsToCSV(apiKey) {
+  const monitors = [];
+  let after = null;
+  let pageCount = 0;
+
+  console.log('Fetching monitors...');
+
+  do {
+    const url = new URL('https://api.dnsradar.dev/monitors');
+    url.searchParams.set('limit', '100');
+    if (after) {
+      url.searchParams.set('after', after);
+    }
+
+    const response = await fetch(url, {
+      headers: { 'X-Api-Key': apiKey }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    monitors.push(...data.data);
+    pageCount++;
+
+    console.log(`Fetched page ${pageCount} (${data.data.length} items)`);
+
+    after = data.after;
+
+    // Respect rate limits
+    if (after) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  } while (after !== null);
+
+  console.log(`\nTotal monitors fetched: ${monitors.length}`);
+
+  // Convert to CSV
+  const csv = [
+    'UUID,Domain,Subdomain,Type,State,Active',
+    ...monitors.map(m =>
+      `${m.uuid},${m.domain},${m.subdomain},${m.record_type},${m.state},${m.is_active}`
+    )
+  ].join('\n');
+
+  fs.writeFileSync('monitors.csv', csv);
+  console.log('Exported to monitors.csv');
+}
+
+// Usage
+exportMonitorsToCSV('sk_your_api_key_here')
+  .catch(console.error);
+```
+
+```python Python
+import requests
+import csv
+import time
+
+def export_monitors_to_csv(api_key, filename='monitors.csv'):
+    monitors = []
+    after = None
+    page_count = 0
+
+    print('Fetching monitors...')
+
+    while True:
+        params = {'limit': 100}
+        if after:
+            params['after'] = after
+
+        response = requests.get(
+            'https://api.dnsradar.dev/monitors',
+            params=params,
+            headers={'X-Api-Key': api_key}
+        )
+
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
+
+        data = response.json()
+        monitors.extend(data['data'])
+        page_count += 1
+
+        print(f"Fetched page {page_count} ({len(data['data'])} items)")
+
+        after = data.get('after')
+        if not after:
+            break
+
+        # Respect rate limits
+        time.sleep(0.5)
+
+    print(f"\nTotal monitors fetched: {len(monitors)}")
+
+    # Write to CSV
+    with open(filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['UUID', 'Domain', 'Subdomain', 'Type', 'State', 'Active'])
+
+        for monitor in monitors:
+            writer.writerow([
+                monitor['uuid'],
+                monitor['domain'],
+                monitor['subdomain'],
+                monitor['record_type'],
+                monitor['state'],
+                monitor['is_active']
+            ])
+
+    print(f"Exported to {filename}")
+
+# Usage
+if __name__ == '__main__':
+    export_monitors_to_csv('sk_your_api_key_here')
+```
+
+```go Go
+package main
+
+import (
+    "encoding/csv"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "net/url"
+    "os"
+    "time"
+)
+
+type Monitor struct {
+    UUID       string `json:"uuid"`
+    Domain     string `json:"domain"`
+    Subdomain  string `json:"subdomain"`
+    RecordType string `json:"record_type"`
+    State      string `json:"state"`
+    IsActive   bool   `json:"is_active"`
+}
+
+type PaginatedMonitors struct {
+    Limit   int       `json:"limit"`
+    After   *string   `json:"after"`
+    Before  *string   `json:"before"`
+    HasMore bool      `json:"has_more"`
+    Data    []Monitor `json:"data"`
+}
+
+func exportMonitorsToCSV(apiKey, filename string) error {
+    var monitors []Monitor
+    var after *string
+    pageCount := 0
+
+    fmt.Println("Fetching monitors...")
+
+    for {
+        params := url.Values{}
+        params.Add("limit", "100")
+        if after != nil {
+            params.Add("after", *after)
+        }
+
+        req, _ := http.NewRequest("GET",
+            "https://api.dnsradar.dev/monitors?"+params.Encode(),
+            nil)
+        req.Header.Set("X-Api-Key", apiKey)
+
+        client := &http.Client{}
+        resp, err := client.Do(req)
+        if err != nil {
+            return err
+        }
+
+        body, _ := io.ReadAll(resp.Body)
+        resp.Body.Close()
+
+        var result PaginatedMonitors
+        json.Unmarshal(body, &result)
+
+        monitors = append(monitors, result.Data...)
+        pageCount++
+
+        fmt.Printf("Fetched page %d (%d items)\n", pageCount, len(result.Data))
+
+        if result.After == nil {
+            break
+        }
+        after = result.After
+
+        // Respect rate limits
+        time.Sleep(500 * time.Millisecond)
+    }
+
+    fmt.Printf("\nTotal monitors fetched: %d\n", len(monitors))
+
+    // Write to CSV
+    file, err := os.Create(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    writer := csv.NewWriter(file)
+    defer writer.Flush()
+
+    // Header
+    writer.Write([]string{"UUID", "Domain", "Subdomain", "Type", "State", "Active"})
+
+    // Data
+    for _, m := range monitors {
+        writer.Write([]string{
+            m.UUID,
+            m.Domain,
+            m.Subdomain,
+            m.RecordType,
+            m.State,
+            fmt.Sprintf("%t", m.IsActive),
+        })
+    }
+
+    fmt.Printf("Exported to %s\n", filename)
+    return nil
+}
+
+func main() {
+    if err := exportMonitorsToCSV("sk_your_api_key_here", "monitors.csv"); err != nil {
+        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+        os.Exit(1)
+    }
+}
+```
+</CodeGroup>
+
+## Common Pitfalls
+
+<Warning>
+  **Don't Manipulate Cursors**: Cursors are opaque tokens. Never try to decode, modify, or construct them manually. Always use the values provided by the API.
+</Warning>
+
+<Warning>
+  **Don't Use Offset-Based Logic**: Unlike offset-based pagination, you cannot jump to arbitrary pages (e.g., "page 5"). You must iterate sequentially using cursors.
+</Warning>
+
+<Warning>
+  **Cursors Can Expire**: Cursors may become invalid after extended periods. If you receive an error, restart pagination from the beginning.
+</Warning>
+
+## See Also
+
+- [Rate Limiting](/docs/rate-limit) - Understanding API rate limits when paginating
+- [Error Codes](/docs/error-codes) - Handling pagination errors
+- [API Reference](/docs/openapi) - Detailed endpoint documentation

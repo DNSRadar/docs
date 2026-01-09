@@ -1,0 +1,612 @@
+---
+title: "Webhook Events"
+description: "Learn how DNSRadar sends webhook events and how to handle them securely"
+---
+
+## Overview
+
+DNSRadar sends webhook events to notify your application in real-time when DNS monitoring events occur. When a monitor detects a change in DNS records, we'll send an HTTP POST request to your configured webhook endpoint with details about the event.
+
+<Info>
+  Webhooks enable you to build automated workflows and integrations that respond immediately to DNS changes without polling the API.
+</Info>
+
+## Event Payload Structure
+
+When an event occurs, we send a POST request to your webhook URL with the following JSON payload:
+
+```json
+{
+  "uuid": "req_abc123...",
+  "webhook_uuid": "wh_abc123...",
+  "event": {
+    "uuid": "evt_abc123...",
+    "monitor_uuid": "mon_abc123...",
+    "domain": "example.com",
+    "subdomain": "www",
+    "record_type": "A",
+    "expected_value": [
+      "192.168.1.1"
+    ],
+    "occurred": "2023-11-07T05:31:56Z",
+    "previous_value": [
+      "192.168.1.1"
+    ],
+    "current_value": [
+      "10.0.0.1"
+    ],
+    "old_state": "MISMATCH",
+    "new_state": "VALID",
+    "incidence_count": 0
+  },
+  "created": "2023-11-07T05:31:56Z"
+}
+```
+
+### Payload Fields
+
+<ParamField path="uuid" type="string" required>
+  Unique identifier for this webhook request
+</ParamField>
+
+<ParamField path="webhook_uuid" type="string" required>
+  Unique identifier of the webhook configuration
+</ParamField>
+
+<ParamField path="event" type="object" required>
+  The monitoring event that triggered the webhook
+</ParamField>
+
+<ParamField path="event.uuid" type="string" required>
+  Unique identifier for the event
+</ParamField>
+
+<ParamField path="event.monitor_uuid" type="string" required>
+  Unique identifier of the monitor that detected the change
+</ParamField>
+
+<ParamField path="event.domain" type="string" required>
+  The root domain being monitored
+</ParamField>
+
+<ParamField path="event.subdomain" type="string">
+  The subdomain being monitored (if applicable)
+</ParamField>
+
+<ParamField path="event.record_type" type="string" required>
+  The DNS record type (A, AAAA, CNAME, MX, TXT, etc.)
+</ParamField>
+
+<ParamField path="event.expected_value" type="array" required>
+  The expected DNS record values for the monitor
+</ParamField>
+
+<ParamField path="event.occurred" type="string" required>
+  ISO 8601 timestamp when the event occurred
+</ParamField>
+
+<ParamField path="event.previous_value" type="array" required>
+  The DNS record values before this event
+</ParamField>
+
+<ParamField path="event.current_value" type="array" required>
+  The current DNS record values
+</ParamField>
+
+<ParamField path="event.old_state" type="string" required>
+  The previous state of the monitor (VALID, MISMATCH, ERROR)
+</ParamField>
+
+<ParamField path="event.new_state" type="string" required>
+  The current state of the monitor (VALID, MISMATCH, ERROR)
+</ParamField>
+
+<ParamField path="event.incidence_count" type="integer" required>
+  Number of consecutive times the monitor has been in this state
+</ParamField>
+
+<ParamField path="created" type="string" required>
+  ISO 8601 timestamp when the webhook request was created
+</ParamField>
+
+## Retry Logic
+
+DNSRadar implements an automatic retry mechanism to ensure reliable delivery of webhook events. If your endpoint returns a non-2xx status code, we'll retry the request using an incremental backoff strategy.
+
+### Retry Schedule
+
+| Attempt | Delay |
+|---------|-------|
+| 1st retry | 5 minutes |
+| 2nd retry | 10 minutes |
+| 3rd retry | 15 minutes |
+| 4th retry | 30 minutes |
+| 5th retry | 1 hour |
+| 6th retry | 2 hours |
+| 7th retry | 6 hours |
+| 8th retry | 12 hours |
+| 9th retry | 24 hours |
+
+<Warning>
+  After the 9th retry fails, we'll stop attempting to deliver the event and notify you. All events for this webhook will be paused until a successful request is made.
+</Warning>
+
+### Webhook Pausing
+
+If a webhook consistently fails, all events attached to that webhook will be automatically paused to prevent further failed attempts. The webhook will resume automatically once a request succeeds.
+
+<Tip>
+  Monitor your webhook health in the [DNSRadar Dashboard](https://dashboard.dnsradar.dev) to identify and resolve issues before events are paused.
+</Tip>
+
+## Security
+
+### Webhook Signatures
+
+Every webhook request includes cryptographic signatures to verify authenticity and prevent unauthorized requests.
+
+#### Signature Headers
+
+<ParamField header="X-DNSRadar-Signature" type="string" required>
+  HMAC-SHA256 signature of the raw request body, signed with your webhook secret
+</ParamField>
+
+<ParamField header="X-Webhook-Timestamp" type="integer" required>
+  Unix timestamp (in seconds) when the webhook was sent
+</ParamField>
+
+### Verifying Signatures
+
+To ensure the webhook request is legitimate and hasn't been tampered with, verify the signature on every request:
+
+<CodeGroup>
+```javascript Node.js
+import crypto from 'crypto';
+
+function verifyWebhookSignature(payload, signature, secret, timestamp) {
+  // Check timestamp to prevent replay attacks (within 5 minutes)
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (Math.abs(currentTime - timestamp) > 300) {
+    throw new Error('Webhook timestamp is too old');
+  }
+
+  // Compute HMAC signature
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(payload);
+  const computedSignature = hmac.digest('hex');
+
+  // Compare signatures securely
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computedSignature))) {
+    throw new Error('Invalid webhook signature');
+  }
+
+  return true;
+}
+
+// Express.js example
+app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-dnsradar-signature'];
+  const timestamp = parseInt(req.headers['x-webhook-timestamp']);
+  const secret = process.env.WEBHOOK_SECRET;
+
+  try {
+    verifyWebhookSignature(req.body, signature, secret, timestamp);
+
+    // Parse and process the event
+    const event = JSON.parse(req.body);
+    console.log('Received event:', event.event.uuid);
+
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Webhook verification failed:', error.message);
+    res.status(401).send('Unauthorized');
+  }
+});
+```
+
+```python Python
+import hmac
+import hashlib
+import time
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+
+def verify_webhook_signature(payload, signature, secret, timestamp):
+    # Check timestamp to prevent replay attacks (within 5 minutes)
+    current_time = int(time.time())
+    if abs(current_time - timestamp) > 300:
+        raise ValueError('Webhook timestamp is too old')
+
+    # Compute HMAC signature
+    computed_signature = hmac.new(
+        secret.encode('utf-8'),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    # Compare signatures securely
+    if not hmac.compare_digest(signature, computed_signature):
+        raise ValueError('Invalid webhook signature')
+
+    return True
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    signature = request.headers.get('X-DNSRadar-Signature')
+    timestamp = int(request.headers.get('X-Webhook-Timestamp'))
+    secret = os.environ.get('WEBHOOK_SECRET')
+
+    try:
+        verify_webhook_signature(request.data, signature, secret, timestamp)
+
+        # Parse and process the event
+        event = request.json
+        print(f"Received event: {event['event']['uuid']}")
+
+        return 'OK', 200
+    except ValueError as e:
+        print(f"Webhook verification failed: {str(e)}")
+        abort(401)
+```
+
+```go Go
+package main
+
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "crypto/subtle"
+    "encoding/hex"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "strconv"
+    "time"
+)
+
+func verifyWebhookSignature(payload []byte, signature, secret string, timestamp int64) error {
+    // Check timestamp to prevent replay attacks (within 5 minutes)
+    currentTime := time.Now().Unix()
+    if abs(currentTime-timestamp) > 300 {
+        return fmt.Errorf("webhook timestamp is too old")
+    }
+
+    // Compute HMAC signature
+    h := hmac.New(sha256.New, []byte(secret))
+    h.Write(payload)
+    computedSignature := hex.EncodeToString(h.Sum(nil))
+
+    // Compare signatures securely
+    if subtle.ConstantTimeCompare([]byte(signature), []byte(computedSignature)) != 1 {
+        return fmt.Errorf("invalid webhook signature")
+    }
+
+    return nil
+}
+
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+    signature := r.Header.Get("X-DNSRadar-Signature")
+    timestampStr := r.Header.Get("X-Webhook-Timestamp")
+    timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+    secret := os.Getenv("WEBHOOK_SECRET")
+
+    // Read body
+    body, err := io.ReadAll(r.Body)
+    if err != nil {
+        http.Error(w, "Error reading body", http.StatusBadRequest)
+        return
+    }
+
+    // Verify signature
+    if err := verifyWebhookSignature(body, signature, secret, timestamp); err != nil {
+        fmt.Printf("Webhook verification failed: %v\n", err)
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    // Parse and process event
+    var event map[string]interface{}
+    json.Unmarshal(body, &event)
+    fmt.Printf("Received event: %s\n", event["event"].(map[string]interface{})["uuid"])
+
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
+}
+
+func abs(x int64) int64 {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+```
+
+```php PHP
+<?php
+
+function verifyWebhookSignature($payload, $signature, $secret, $timestamp) {
+    // Check timestamp to prevent replay attacks (within 5 minutes)
+    $currentTime = time();
+    if (abs($currentTime - $timestamp) > 300) {
+        throw new Exception('Webhook timestamp is too old');
+    }
+
+    // Compute HMAC signature
+    $computedSignature = hash_hmac('sha256', $payload, $secret);
+
+    // Compare signatures securely
+    if (!hash_equals($signature, $computedSignature)) {
+        throw new Exception('Invalid webhook signature');
+    }
+
+    return true;
+}
+
+// Webhook endpoint
+$signature = $_SERVER['HTTP_X_DNSTAIL_SIGNATURE'];
+$timestamp = intval($_SERVER['HTTP_X_WEBHOOK_TIMESTAMP']);
+$secret = getenv('WEBHOOK_SECRET');
+$payload = file_get_contents('php://input');
+
+try {
+    verifyWebhookSignature($payload, $signature, $secret, $timestamp);
+
+    // Parse and process the event
+    $event = json_decode($payload, true);
+    error_log("Received event: " . $event['event']['uuid']);
+
+    http_response_code(200);
+    echo 'OK';
+} catch (Exception $e) {
+    error_log("Webhook verification failed: " . $e->getMessage());
+    http_response_code(401);
+    echo 'Unauthorized';
+}
+?>
+```
+</CodeGroup>
+
+<Warning>
+  Always verify the timestamp to prevent replay attacks. We recommend rejecting webhooks with timestamps older than 5 minutes.
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Respond Quickly" icon="bolt">
+    Your webhook endpoint should respond with a 2xx status code within 30 seconds. Process events asynchronously if needed.
+
+    ```javascript
+    app.post('/webhook', async (req, res) => {
+      // Verify signature first
+      verifyWebhookSignature(req.body, ...);
+
+      // Respond immediately
+      res.status(200).send('OK');
+
+      // Process asynchronously
+      processWebhookAsync(req.body).catch(console.error);
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Handle Duplicate Events" icon="copy">
+    Due to retries, you may receive the same event multiple times. Use the `uuid` field to deduplicate events.
+
+    ```javascript
+    const processedEvents = new Set();
+
+    function handleWebhook(event) {
+      if (processedEvents.has(event.uuid)) {
+        console.log('Duplicate event, skipping');
+        return;
+      }
+
+      processedEvents.add(event.uuid);
+      // Process the event
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use HTTPS Endpoints" icon="lock">
+    Always use HTTPS URLs for your webhook endpoints to ensure data is encrypted in transit.
+  </Accordion>
+
+  <Accordion title="Monitor Webhook Health" icon="heart-pulse">
+    Track failed webhook attempts in the DNSRadar Dashboard and set up alerts for repeated failures.
+  </Accordion>
+
+  <Accordion title="Implement Error Handling" icon="triangle-exclamation">
+    Handle errors gracefully and log failures for debugging.
+
+    ```python
+    @app.route('/webhook', methods=['POST'])
+    def webhook():
+        try:
+            # Verify and process webhook
+            verify_webhook_signature(...)
+            process_event(request.json)
+            return 'OK', 200
+        except Exception as e:
+            # Log error but still return 200 if event was received
+            logger.error(f"Error processing webhook: {e}")
+            return 'OK', 200  # Prevent retries for processing errors
+    ```
+  </Accordion>
+
+  <Accordion title="Test Your Integration" icon="flask">
+    Use the webhook test endpoint to verify your integration before going live.
+
+    ```bash
+    curl -X POST https://api.dnsradar.dev/webhooks/{uuid}/test \
+      -H "X-Api-Key: your_api_key"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Example: Complete Webhook Handler
+
+Here's a complete example of a webhook handler with all best practices:
+
+<CodeGroup>
+```javascript Node.js
+import express from 'express';
+import crypto from 'crypto';
+
+const app = express();
+const processedEvents = new Set();
+
+// Use raw body parser for signature verification
+app.post('/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    try {
+      // Extract headers
+      const signature = req.headers['x-dnsradar-signature'];
+      const timestamp = parseInt(req.headers['x-webhook-timestamp']);
+      const secret = process.env.WEBHOOK_SECRET;
+
+      // Verify timestamp (within 5 minutes)
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (Math.abs(currentTime - timestamp) > 300) {
+        return res.status(401).send('Timestamp too old');
+      }
+
+      // Verify signature
+      const hmac = crypto.createHmac('sha256', secret);
+      hmac.update(req.body);
+      const computedSignature = hmac.digest('hex');
+
+      if (!crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(computedSignature)
+      )) {
+        return res.status(401).send('Invalid signature');
+      }
+
+      // Parse event
+      const webhook = JSON.parse(req.body);
+
+      // Check for duplicates
+      if (processedEvents.has(webhook.uuid)) {
+        console.log(`Duplicate event: ${webhook.uuid}`);
+        return res.status(200).send('OK');
+      }
+
+      // Mark as processed
+      processedEvents.add(webhook.uuid);
+
+      // Respond immediately
+      res.status(200).send('OK');
+
+      // Process asynchronously
+      processEvent(webhook).catch(err => {
+        console.error('Error processing event:', err);
+      });
+
+    } catch (error) {
+      console.error('Webhook handler error:', error);
+      res.status(500).send('Internal error');
+    }
+  }
+);
+
+async function processEvent(webhook) {
+  const event = webhook.event;
+
+  console.log(`Processing event ${event.uuid} for ${event.domain}`);
+  console.log(`State changed: ${event.old_state} → ${event.new_state}`);
+
+  // Your custom logic here
+  if (event.new_state === 'MISMATCH') {
+    await sendAlert(event);
+  }
+}
+
+app.listen(3000, () => {
+  console.log('Webhook server listening on port 3000');
+});
+```
+
+```python Python
+from flask import Flask, request, abort
+import hmac
+import hashlib
+import time
+import json
+import logging
+from typing import Set
+
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+processed_events: Set[str] = set()
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    try:
+        # Extract headers
+        signature = request.headers.get('X-DNSRadar-Signature')
+        timestamp = int(request.headers.get('X-Webhook-Timestamp', 0))
+        secret = os.environ.get('WEBHOOK_SECRET')
+
+        if not all([signature, timestamp, secret]):
+            abort(401, 'Missing required headers or configuration')
+
+        # Verify timestamp (within 5 minutes)
+        current_time = int(time.time())
+        if abs(current_time - timestamp) > 300:
+            abort(401, 'Timestamp too old')
+
+        # Verify signature
+        computed_signature = hmac.new(
+            secret.encode('utf-8'),
+            request.data,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(signature, computed_signature):
+            abort(401, 'Invalid signature')
+
+        # Parse event
+        webhook_data = request.json
+
+        # Check for duplicates
+        if webhook_data['uuid'] in processed_events:
+            logger.info(f"Duplicate event: {webhook_data['uuid']}")
+            return 'OK', 200
+
+        # Mark as processed
+        processed_events.add(webhook_data['uuid'])
+
+        # Process event
+        process_event(webhook_data)
+
+        return 'OK', 200
+
+    except Exception as e:
+        logger.error(f"Webhook handler error: {e}")
+        abort(500, 'Internal error')
+
+def process_event(webhook):
+    event = webhook['event']
+
+    logger.info(f"Processing event {event['uuid']} for {event['domain']}")
+    logger.info(f"State changed: {event['old_state']} → {event['new_state']}")
+
+    # Your custom logic here
+    if event['new_state'] == 'MISMATCH':
+        send_alert(event)
+
+if __name__ == '__main__':
+    app.run(port=3000)
+```
+</CodeGroup>
+
+<Tip>
+  Need help implementing webhooks? Check out our [API Reference](/docs/openapi) or contact [support](mailto:support@dnsradar.dev).
+</Tip>
