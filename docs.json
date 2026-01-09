@@ -1,11 +1,15 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "almond",
-  "name": "DNSRadar Documentation",
+  "name": "DNSRadar API Documentation",
   "colors": {
     "primary": "#dc2626",
     "light": "#dc2626",
     "dark": "#dc2626"
+  },
+  "logo": {
+    "light": "/logo/logo-dark.png",
+    "dark": "/logo/logo-light.png"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -61,7 +65,6 @@
               "GET /groups/{slug}",
               "PATCH /groups/{slug}",
               "DELETE /groups/{slug}",
-              "GET /groups/{slug}/monitors",
               "PATCH /groups/{slug}/monitors"
             ]
           },
@@ -98,10 +101,6 @@
         ]
       }
     ]
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [
