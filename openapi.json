@@ -1,1 +1,2456 @@
-../api/openapi.json
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DNSRadar API",
+    "description": "DNSRadar API - Monitor your DNS records and get notified when they change.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "DNSRadar Support",
+      "email": "support@dnsradar.dev",
+      "url": "https://dnsradar.dev"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.dnsradar.dev",
+      "description": "Production server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "API key used to authenticate yourself on DNSRadar. Obtain your API key from your DNSRadar dashboard."
+      }
+    },
+    "schemas": {
+      "PaginatedResponse": {
+        "type": "object",
+        "description": "Paginated response wrapper for list endpoints. Uses cursor-based pagination with after/before parameters.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "Number of items per page (max 100)",
+            "example": 20
+          },
+          "after": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor to fetch the next page of results"
+          },
+          "before": {
+            "type": "string",
+            "nullable": true,
+            "description": "Cursor to fetch the previous page of results"
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Indicates if there are more items to fetch"
+          },
+          "data": {
+            "type": "array",
+            "description": "Array of items for the current page",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "description": "Team member account",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the account"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Account's display name",
+            "example": "Richard Hendricks"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Account's email address",
+            "example": "richard@piedpiper.com"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "URL to the user's avatar image",
+            "example": "https://www.gravatar.com/avatar/..."
+          },
+          "firstname": {
+            "type": "string",
+            "nullable": true,
+            "description": "User's first name",
+            "example": "Richard"
+          },
+          "notification_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Alternative email for notifications",
+            "example": "richard.hendricks@gmail.com"
+          },
+          "is_owner": {
+            "type": "boolean",
+            "description": "Whether this account is the organization owner"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Account creation datetime in ISO 8601 format"
+          },
+          "locked": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Account lock datetime in ISO 8601 format, if locked"
+          },
+          "lock_reason": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["ban", "email", "bounced"],
+            "description": "Reason for account lock. Ban means the account was banned by an admin. Email means the account is new and the user has not verified their email address. Bounced means emails to the user have bounced."
+          },
+          "has_newsletter": {
+            "type": "boolean",
+            "description": "Whether the user is subscribed to the newsletter"
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "description": "Organization or workspace",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Organization UUID (32 characters)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Organization name",
+            "example": "Pied Piper"
+          },
+          "line1": {
+            "type": "string",
+            "nullable": true,
+            "description": "Address line 1",
+            "example": "5230 Newell Rd"
+          },
+          "line2": {
+            "type": "string",
+            "nullable": true,
+            "description": "Address line 2",
+            "example": "Suite 400"
+          },
+          "zipcode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Postal/ZIP code",
+            "example": "94303"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "description": "City",
+            "example": "Palo Alto"
+          },
+          "state": {
+            "type": "string",
+            "nullable": true,
+            "description": "State or province",
+            "example": "CA"
+          },
+          "country": {
+            "type": "string",
+            "nullable": true,
+            "description": "2-letter country code",
+            "example": "US"
+          },
+          "company_vat": {
+            "type": "string",
+            "nullable": true,
+            "description": "European VAT/Tax number"
+          },
+          "billing_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Billing contact email address",
+            "example": "billing@piedpiper.com"
+          },
+          "is_premium": {
+            "type": "boolean",
+            "description": "Whether organization has an active subscription"
+          },
+          "renew_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Next billing date"
+          },
+          "cancels_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Scheduled cancellation date"
+          },
+          "card_expiry": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Credit card expiry date"
+          },
+          "card_brand": {
+            "type": "string",
+            "nullable": true,
+            "description": "Credit card brand (visa, mastercard, etc.)",
+            "example": "visa"
+          },
+          "last4": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last 4 digits of credit card",
+            "example": "1234"
+          }
+        }
+      },
+      "Monitor": {
+        "type": "object",
+        "description": "DNS monitoring configuration",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Monitor identifier with 'mon_' prefix",
+            "example": "mon_abc123..."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Monitor creation datetime in ISO 8601 format"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain name to monitor",
+            "example": "example.com"
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "Subdomain to monitor (empty string for apex)",
+            "example": "www"
+          },
+          "record_type": {
+            "type": "string",
+            "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR"],
+            "description": "DNS record type to monitor"
+          },
+          "expected_value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Expected DNS record values (up to 10)",
+            "example": ["192.168.1.1"]
+          },
+          "current_value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Current DNS record values",
+            "example": ["192.168.1.1"]
+          },
+          "is_exact_match": {
+            "type": "boolean",
+            "description": "If set to false, special rules applies depending on the record_type. See documentation for details."
+          },
+          "state": {
+            "type": "string",
+            "nullable": true,
+            "enum": ["UNSET", "VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"],
+            "description": "Current monitoring state"
+          },
+          "incidence_count": {
+            "type": "integer",
+            "description": "Number of incidents/changes detected"
+          },
+          "last_checked": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Datetime of the last check in ISO 8601 format"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether monitoring is active"
+          },
+          "frequency": {
+            "type": "integer",
+            "description": "Check frequency in minutes",
+            "enum": [5, 10, 15, 30, 60, 120],
+            "example": 60
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "description": "DNS change event detected by monitoring",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Event identifier with 'evt_' prefix",
+            "example": "evt_abc123..."
+          },
+          "monitor_uuid": {
+            "type": "string",
+            "description": "UUID of the associated monitor",
+            "example": "mon_abc123..."
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain name to monitor",
+            "example": "example.com"
+          },
+          "subdomain": {
+            "type": "string",
+            "description": "Subdomain to monitor (empty string for apex)",
+            "example": "www"
+          },
+          "record_type": {
+            "type": "string",
+            "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR"],
+            "description": "DNS record type to monitor"
+          },
+          "expected_value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Expected DNS record values (up to 10)",
+            "example": ["192.168.1.1"]
+          },
+          "occurred": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Datetime when the event occurred in ISO 8601 format"
+          },
+          "previous_value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Previous DNS values",
+            "example": ["192.168.1.1"]
+          },
+          "current_value": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "New DNS values",
+            "example": ["10.0.0.1"]
+          },
+          "old_state": {
+            "type": "string",
+            "enum": ["UNSET", "VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"],
+            "description": "Previous monitoring state",
+            "example": "MISMATCH"
+          },
+          "new_state": {
+            "type": "string",
+            "enum": ["VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"],
+            "description": "New monitoring state",
+            "example": "VALID"
+          },
+          "incidence_count": {
+            "type": "integer",
+            "description": "Total number of incidents for the monitor.",
+            "example": 0
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "description": "Group for organizing monitors",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Group identifier with 'grp_' prefix",
+            "example": "grp_abc123..."
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier",
+            "example": "production-servers"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "Production Servers"
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether this is the default group"
+          }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "description": "Webhook configuration for event notifications",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Webhook identifier with 'wh_' prefix",
+            "example": "wh_abc123..."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Webhook creation datetime in ISO 8601 format"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Webhook endpoint URL",
+            "example": "https://api.server.com/webhook/dnsradar"
+          },
+          "method": {
+            "type": "string",
+            "enum": ["POST", "PUT", "DELETE", "PATCH"],
+            "default": "POST",
+            "description": "HTTP method to use for the webhook"
+          },
+          "headers": {
+            "type": "object",
+            "nullable": true,
+            "description": "Custom HTTP headers as key-value pairs",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "Authorization": "Bearer abc123token",
+              "X-Custom-Header": "value"
+            }
+          },
+          "secret": {
+            "type": "string",
+            "nullable": true,
+            "description": "Secret key used for HMAC-SHA256 signing of webhook requests. The signature is sent in the X-Webhook-Signature header.",
+            "example": "Ultra Secure P@ssw0rd!"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether webhook is active"
+          },
+          "last_error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last error message if any",
+            "example": "Timeout connecting to endpoint"
+          },
+          "last_executed": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Datetime of last execution in ISO 8601 format"
+          }
+        }
+      },
+      "WebhookRequest": {
+        "type": "object",
+        "description": "Record of a webhook execution",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "Request identifier with 'req_' prefix",
+            "example": "req_abc123..."
+          },
+          "webhook_uuid": {
+            "type": "string",
+            "description": "UUID of the associated webhook",
+            "example": "wh_abc123..."
+          },
+          "event_uuid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UUID of the associated event",
+            "example": "evt_abc123..."
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Datetime when the webhook request was created in ISO 8601 format"
+          },
+          "retries": {
+            "type": "integer",
+            "description": "Number of retry attempts made",
+            "example": 0
+          },
+          "delivered": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Datetime when the webhook was successfully delivered in ISO 8601 format"
+          },
+          "status_code": {
+            "type": "integer",
+            "nullable": true,
+            "description": "HTTP status code from the last delivery attempt",
+            "example": 200
+          },
+          "response_body": {
+            "type": "string",
+            "nullable": true,
+            "description": "Response body from the last delivery attempt (truncated to 4000 chars)",
+            "example": "accepted"
+          },
+          "last_attempt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Datetime when the webhook was sent for the last time, in ISO 8601 format"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "description": "Error response",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "HTTP status code"
+          },
+          "error": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Error message"
+              },
+              {
+                "type": "object",
+                "description": "Validation errors by field",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "description": "Field-specific validation errors",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "PaginationAfter": {
+        "name": "after",
+        "in": "query",
+        "description": "Cursor for fetching the next page of results. Use the value from the previous response's 'after' field.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PaginationBefore": {
+        "name": "before",
+        "in": "query",
+        "description": "Cursor for fetching the previous page of results. Use the value from the previous response's 'before' field.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PaginationLimit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of items per page (1-100, default: 20)",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "PaginationOrderBy": {
+        "name": "order_by",
+        "in": "query",
+        "description": "Field to order results by",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PaginationOrderWay": {
+        "name": "order_way",
+        "in": "query",
+        "description": "Sort direction",
+        "schema": {
+          "type": "string",
+          "enum": ["asc", "desc"],
+          "default": "asc"
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Authentication is missing or invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": 401,
+              "error": "Unauthorized"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": 404,
+              "error": "Not found"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": 400,
+              "errors": {
+                "email": "Invalid email format"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/agents": {
+      "get": {
+        "summary": "List agents",
+        "description": "Get a paginated list of all team members in the organization.",
+        "tags": ["Agents"],
+        "operationId": "listAgents",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of agents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Agent"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/organization": {
+      "get": {
+        "summary": "Get organization details",
+        "description": "Get details of the organization that manages the API key.",
+        "tags": ["Organization"],
+        "operationId": "getOrganization",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organization"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/monitors": {
+      "get": {
+        "summary": "List monitors",
+        "description": "Get a paginated list of all DNS monitors for the organization.",
+        "x-mint": {
+          "content": "You can filter monitors by group, state, domain, record_type and is_active.<br />For example: ?group=production&state=invalid&is_active=true"
+        },
+        "tags": ["Monitors"],
+        "operationId": "listMonitors",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "description": "Filter by group slug",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "description": "Filter by monitor state",
+            "schema": {
+              "type": "string",
+              "enum": ["UNSET", "VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"]
+            }
+          },
+          {
+            "name": "domain",
+            "in": "query",
+            "description": "Filter by domain name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "record_type",
+            "in": "query",
+            "description": "Filter by DNS record type",
+            "schema": {
+              "type": "string",
+              "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR"]
+            }
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of monitors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Monitor"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create monitor",
+        "description": "Create a new DNS monitor. Rate limited to 250 requests per minutes.",
+        "x-mint": {
+          "content": "Please note that the free plan limited to 50 total monitors.<br />If you plan to add many monitors, consider using the bulk endpoint `/monitors/bulk` instead."
+        },
+        "tags": ["Monitors"],
+        "operationId": "createMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["domain", "record_type", "expected_value"],
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "example.com"
+                  },
+                  "subdomain": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Subdomain (empty string for apex domain)",
+                    "example": "www"
+                  },
+                  "record_type": {
+                    "type": "string",
+                    "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR", "SPF"]
+                  },
+                  "expected_value": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ],
+                    "description": "Expected DNS value(s). Can be a string or array (max 10 values, each max 1000 chars)",
+                    "example": ["192.168.1.1"]
+                  },
+                  "frequency": {
+                    "type": "integer",
+                    "enum": [5, 10, 15, 30, 60, 120],
+                    "default": 60,
+                    "description": "Check frequency in minutes"
+                  },
+                  "is_exact_match": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "If false, additional values beyond expected_value are allowed"
+                  },
+                  "is_active": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "group": {
+                    "type": "string",
+                    "description": "Group slug (created if doesn't exist)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Monitor created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monitor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "402": {
+            "description": "Monitor limit reached (upgrade required)"
+          }
+        }
+      }
+    },
+    "/monitors/bulk": {
+      "post": {
+        "summary": "Create multiple monitors",
+        "description": "Create up to 1000 monitors in a single request. Rate limited to 250 requests per minutes.",
+        "x-mint": {
+          "content": "Useful for initial bulk imports, this allows you to import up to 250 000 monitors per minutes.<br />Please note that the free plan limited to 50 total monitors."
+        },
+        "tags": ["Monitors"],
+        "operationId": "bulkCreateMonitors",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["monitors"],
+                "properties": {
+                  "monitors": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1000,
+                    "items": {
+                      "type": "object",
+                      "required": ["domain", "record_type", "expected_value"],
+                      "properties": {
+                        "domain": {
+                          "type": "string"
+                        },
+                        "subdomain": {
+                          "type": "string"
+                        },
+                        "record_type": {
+                          "type": "string"
+                        },
+                        "expected_value": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          ]
+                        },
+                        "frequency": {
+                          "type": "integer"
+                        },
+                        "is_exact_match": {
+                          "type": "boolean"
+                        },
+                        "is_active": {
+                          "type": "boolean"
+                        },
+                        "group": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "group": {
+                    "type": "string",
+                    "description": "Default group slug for all monitors"
+                  },
+                  "frequency": {
+                    "type": "integer",
+                    "description": "Default frequency for all monitors (in minutes)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Monitors created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Monitor"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "402": {
+            "description": "Monitor limit reached"
+          }
+        }
+      }
+    },
+    "/monitors/{uuid}": {
+      "get": {
+        "summary": "Get monitor",
+        "description": "Get details of a specific monitor by UUID.",
+        "tags": ["Monitors"],
+        "operationId": "getMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Monitor UUID (starts with 'mon_')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monitor details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monitor"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update monitor",
+        "description": "Update a monitor's configuration.",
+        "x-mint": {
+          "content": "Allows you to update a monitor to adjust to your specific needs.<br />You can update one or more fields of the monitor, and fields not included in the request body will remain unchanged."
+        },
+        "tags": ["Monitors"],
+        "operationId": "updateMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "subdomain": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "record_type": {
+                    "type": "string",
+                    "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR", "SPF"]
+                  },
+                  "expected_value": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ]
+                  },
+                  "frequency": {
+                    "type": "integer",
+                    "enum": [5, 10, 15, 30, 60, 120]
+                  },
+                  "is_exact_match": {
+                    "type": "boolean"
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  },
+                  "group": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Monitor updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monitor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete monitor",
+        "description": "Removes a monitor.",
+        "tags": ["Monitors"],
+        "operationId": "deleteMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Monitor deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/monitors/{uuid}/enable": {
+      "post": {
+        "summary": "Enable monitor",
+        "description": "Enable a paused monitor.",
+        "x-mint": {
+          "content": "Enabling a monitor will resume its DNS checks according to its configured frequency."
+        },
+        "tags": ["Monitors"],
+        "operationId": "enableMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monitor enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monitor"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/monitors/{uuid}/disable": {
+      "post": {
+        "summary": "Disable monitor",
+        "description": "Pause a monitor.",
+        "x-mint": {
+          "content": "Disabling a monitor will stop its DNS checks until it is re-enabled.<br />Can be useful if a DNS entry has been temporarily changed or is having issues, to avoid unecessary noise."
+        },
+        "tags": ["Monitors"],
+        "operationId": "disableMonitor",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monitor disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Monitor"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/monitors/{monitor_uuid}/events": {
+      "get": {
+        "summary": "List events for monitor",
+        "description": "Get a paginated list of DNS changes (as events) detected for a specific monitor.",
+        "x-mint": {
+          "content": "An events is recorded each time a DNS change is detected for the monitor or when a monitor stays on an invalid state. In that last case, the `incidence_count` increases and triggers an event.<br /><br />You can filter the events by either `occurred_before` or `occurred_after`, as UTC Timestamps.<br />You can use the pagination parameters to navigate through the list of events."
+        },
+        "tags": ["Events"],
+        "operationId": "listEvents",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "monitor_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Monitor UUID"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          },
+          {
+            "name": "occurred_before",
+            "in": "query",
+            "description": "Filter events that occurred before this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "occurred_after",
+            "in": "query",
+            "description": "Filter events that occurred after this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "old_state",
+            "in": "query",
+            "description": "Filter events by old state",
+            "schema": {
+              "type": "string",
+              "enum": ["UNSET", "VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"]
+            }
+          },
+          {
+            "name": "new_state",
+            "in": "query",
+            "description": "Filter events by new state",
+            "schema": {
+              "type": "string",
+              "enum": ["VALID", "INVALID", "TIMEOUT", "MISMATCH", "NOT_FOUND", "NO_DATA", "BAD_SETUP"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "Monitor not found"
+          }
+        }
+      }
+    },
+    "/monitors/{monitor_uuid}/events/{uuid}": {
+      "get": {
+        "summary": "Get event details",
+        "description": "Get details of a specific event.",
+        "tags": ["Events"],
+        "operationId": "getEvent",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "monitor_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event UUID (starts with 'evt_')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/groups": {
+      "get": {
+        "summary": "List groups",
+        "description": "Get a paginated list of all groups.",
+        "x-mint": {
+          "content": "Groups help you organize your monitors into logical collections for easier management and reporting.<br />You can filter monitors by group using the `group` query parameter on the `/monitors` endpoint.<br />A default group is automatically created and cannot be removed, but can be renamed. This is required in order to attach a monitor to a group that will be used to send Webhook notifications."
+        },
+        "tags": ["Groups"],
+        "operationId": "listGroups",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Group"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create group",
+        "description": "Create a new group.",
+        "x-mint": {
+          "content": "You can create multiple groups to organize your monitors effectively.<br />Each group must have a unique slug.<br />You can create unlimited groups on all plans."
+        },
+        "tags": ["Groups"],
+        "operationId": "createGroup",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "example": "Premium Accounts"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "description": "URL-friendly identifier for the group (auto-generated from name if not provided)",
+                    "example": "premium-accounts"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Group created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/groups/{slug}": {
+      "get": {
+        "summary": "Get group",
+        "description": "Get details of a specific group by its slug.",
+        "x-mint": {
+          "content": "The group slug is a URL-friendly identifier for the group.<br />You can use this slug to filter monitors by group using the `group` query parameter on the `/monitors` endpoint."
+        },
+        "tags": ["Groups"],
+        "operationId": "getGroup",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Group slug (URL-friendly identifier)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Group details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update group",
+        "description": "Update a group's name and/or slug.",
+        "x-mint": {
+          "content": "You can update a group's name and/or slug.<br />You can pass only the fields you want to update; other fields will remain unchanged.<Warning>Changing the slug will affect how you reference the group in API calls.</Warning>"
+        },
+        "tags": ["Groups"],
+        "operationId": "updateGroup",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 250,
+                    "example": "Premium Accounts"
+                  },
+                  "slug": {
+                    "type": "string",
+                    "description": "URL-friendly identifier for the group",
+                    "example": "premium-accounts"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Group updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Group"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete group",
+        "description": "Removes a group.",
+        "tags": ["Groups"],
+        "operationId": "deleteGroup",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Group deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/groups/{slug}/monitors": {
+      "patch": {
+        "summary": "Bulk update monitors in group",
+        "description": "Update all monitors in a group with the same settings.",
+        "x-mint": {
+          "content": "This endpoint allows you to update the frequency and active status of all monitors within a specified group in a single request.<br />Useful for quickly adjusting settings for multiple monitors without having to update each one individually.<br />"
+        },
+        "tags": ["Groups"],
+        "operationId": "bulkUpdateGroupMonitors",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "frequency": {
+                    "type": "integer",
+                    "enum": [5, 10, 15, 30, 60, 120]
+                  },
+                  "is_active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Monitors updated"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "summary": "List webhooks",
+        "description": "Get a paginated list of all webhooks for the organization.",
+        "x-mint": {
+          "content": "You can filter webhooks by their active status using the `is_active` query parameter.<br />For example: ?is_active=true"
+        },
+        "tags": ["Webhooks"],
+        "operationId": "listWebhooks",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          },
+          {
+            "name": "is_active",
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of webhooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Webhook"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create webhook",
+        "description": "Create a new webhook for receiving event notifications.",
+        "x-mint": {
+          "content": "By default, an organization is limited to have 5 webhooks per group.<br />If you need more webhooks, feel free to contact us and explain your needs, and we'll update your limits accordingly"
+        },
+        "tags": ["Webhooks"],
+        "operationId": "createWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url", "method"],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2000,
+                    "description": "Webhook endpoint URL (must not resolve to private/loopback IPs)"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": ["POST", "PUT", "DELETE", "PATCH"],
+                    "default": "POST"
+                  },
+                  "headers": {
+                    "type": "object",
+                    "description": "Custom HTTP headers",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "secret": {
+                    "type": "string",
+                    "description": "Secret key for HMAC-SHA256 signing of webhook requests",
+                    "example": "Ultra Secure P@ssw0rd!"
+                  },
+                  "groups": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Array of group slugs to associate with (created if don't exist)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/webhooks/{uuid}": {
+      "get": {
+        "summary": "Get webhook",
+        "description": "Get details of a specific webhook.",
+        "tags": ["Webhooks"],
+        "operationId": "getWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook UUID (starts with 'wh_')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update webhook",
+        "description": "Update a webhook's configuration.",
+        "x-mint": {
+          "content": "Allows you to change the webhook's settings to adapt to your needs.<br />You can update one or more fields of the webhook, and fields not included in the request body will remain unchanged.<Warning>Changing the header field will completely replace the existing headers; it will not merge them.</Warning>"
+        },
+        "tags": ["Webhooks"],
+        "operationId": "updateWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2000
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": ["POST", "PUT", "DELETE", "PATCH"]
+                  },
+                  "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "secret": {
+                    "type": "string",
+                    "description": "Secret key for HMAC-SHA256 signing of webhook requests",
+                    "example": "Ultra Secure P@ssw0rd!"
+                  },
+                  "groups": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete webhook",
+        "description": "Removes a webhook.",
+        "tags": ["Webhooks"],
+        "operationId": "deleteWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Webhook deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks/{uuid}/test": {
+      "post": {
+        "summary": "Test webhook",
+        "description": "Send a test payload to the webhook endpoint.",
+        "x-mint": {
+          "content": "This endpoint allows you to send a test payload to your webhook URL to verify that it is set up correctly and can receive notifications.<br />The test payload simulates a webhook event, allowing you to check the integration without waiting for an actual event to occur.<br />Tests are limited to 5 per minutes, and 50 per hours to avoid any abuses."
+        },
+        "tags": ["Webhooks"],
+        "operationId": "testWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks/{uuid}/requests": {
+      "get": {
+        "summary": "List webhook requests",
+        "description": "Get a paginated list of webhook execution requests.",
+        "tags": ["Webhooks"],
+        "operationId": "listWebhookRequests",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PaginationAfter"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationBefore"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/PaginationOrderWay"
+          },
+          {
+            "name": "created_before",
+            "in": "query",
+            "description": "Filter requests created before this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "created_after",
+            "in": "query",
+            "description": "Filter requests created after this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "delivered_before",
+            "in": "query",
+            "description": "Filter requests delivered before this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "delivered_after",
+            "in": "query",
+            "description": "Filter requests delivered after this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status_code",
+            "in": "query",
+            "description": "Filter by HTTP status code",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "last_attempt_before",
+            "in": "query",
+            "description": "Filter requests with last attempt before this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "last_attempt_after",
+            "in": "query",
+            "description": "Filter requests with last attempt after this UTC timestamp",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "monitor_uuid",
+            "in": "query",
+            "description": "Filter requests by monitor UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of webhook requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/WebhookRequest"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks/{uuid}/enable": {
+      "post": {
+        "summary": "Enable webhook",
+        "description": "Enable a disabled webhook and clear any errors.",
+        "x-mint": {
+          "content": "Enabling a webhook will resume sending notifications to the specified URL according to its configuration.<br />If the webhook was previously disabled due to errors, enabling it will also clear those errors and allow notifications to be sent again.<Warning>If a webhook has been automatically disabled due to repeated failures, the next enable attempt will not reset the failure count. If an error occurs again, the failure count will continue where it stopped.<br />So ensure the webhook is working fine before re-enabling it to avoid longer wait.</Warning>"
+        },
+        "tags": ["Webhooks"],
+        "operationId": "enableWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks/{uuid}/disable": {
+      "post": {
+        "summary": "Disable webhook",
+        "description": "Disable a webhook to stop receiving notifications.",
+        "x-mint": {
+          "content": "Disabling a webhook will stop all notifications from being sent to the specified URL until it is re-enabled.<br />Can be useful if the endpoint is temporarily unavailable or if you want to pause notifications for any reason."
+        },
+        "tags": ["Webhooks"],
+        "operationId": "disableWebhook",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/webhooks/{webhook_uuid}/requests/{uuid}/retry": {
+      "post": {
+        "summary": "Retry webhook request",
+        "description": "Retry a failed webhook request delivery.",
+        "x-mint": {
+          "content": "This endpoint allows you to retry the delivery of a specific webhook request that have failed previously.<br />Upon calling this endpoint, the system will attempt to resend the webhook payload to the original URL using the same method and headers as before.<br />This is useful for recovering from temporary issues that may have caused the initial delivery to fail.<Warning>We only allow to retry once every 30 seconds to avoid any abuses.</Warning>"
+        },
+        "tags": ["Webhooks"],
+        "operationId": "retryWebhookRequest",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook UUID (starts with 'wh_')"
+          },
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Request UUID (starts with 'req_')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request retried successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookRequest"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Agents",
+      "description": "Team member management and invitations"
+    },
+    {
+      "name": "Organization",
+      "description": "Organization settings, billing, and subscription management"
+    },
+    {
+      "name": "Monitors",
+      "description": "DNS monitoring configuration and management"
+    },
+    {
+      "name": "Events",
+      "description": "DNS change events and history"
+    },
+    {
+      "name": "Groups",
+      "description": "Monitor grouping and organization"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhook configuration for event notifications"
+    }
+  ],
+  "x-mintlify": {
+    "openapi": "3.0.3"
+  }
+}
