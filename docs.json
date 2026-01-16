@@ -23,7 +23,7 @@
       "docs/openapi",
       {
         "group": "API Reference",
-        "openapi": "./openapi.json",
+        "openapi": "https://api.dnsradar.dev/openapi.json",
         "pages": [
           {
             "group": "Account",
@@ -38,21 +38,21 @@
               "GET /monitors",
               "POST /monitors",
               "POST /monitors/bulk",
-              "GET /monitors/{uuid}",
-              "PATCH /monitors/{uuid}",
-              "DELETE /monitors/{uuid}",
+              "GET /monitors/{monitor_id}",
+              "PATCH /monitors/{monitor_id}",
+              "DELETE /monitors/{monitor_id}",
               {
                 "group": "Enable/Disable",
                 "pages": [
-                  "POST /monitors/{uuid}/enable",
-                  "POST /monitors/{uuid}/disable"
+                  "POST /monitors/{monitor_id}/enable",
+                  "POST /monitors/{monitor_id}/disable"
                 ]
               },
               {
                 "group": "Events",
                 "pages": [
-                  "GET /monitors/{monitor_uuid}/events",
-                  "GET /monitors/{monitor_uuid}/events/{uuid}"
+                  "GET /monitors/{monitor_id}/events",
+                  "GET /monitors/{monitor_id}/events/{event_id}"
                 ]
               }
             ]
@@ -62,10 +62,10 @@
             "pages": [
               "GET /groups",
               "POST /groups",
-              "GET /groups/{slug}",
-              "PATCH /groups/{slug}",
-              "DELETE /groups/{slug}",
-              "PATCH /groups/{slug}/monitors"
+              "GET /groups/{group_id}",
+              "PATCH /groups/{group_id}",
+              "DELETE /groups/{group_id}",
+              "PATCH /groups/{group_id}/monitors"
             ]
           },
           {
@@ -73,27 +73,27 @@
             "pages": [
               "GET /webhooks",
               "POST /webhooks",
-              "GET /webhooks/{uuid}",
-              "PATCH /webhooks/{uuid}",
-              "DELETE /webhooks/{uuid}",
+              "GET /webhooks/{webhook_id}",
+              "PATCH /webhooks/{webhook_id}",
+              "DELETE /webhooks/{webhook_id}",
               {
                 "group": "Enable/Disable",
                 "pages": [
-                  "POST /webhooks/{uuid}/enable",
-                  "POST /webhooks/{uuid}/disable"
+                  "POST /webhooks/{webhook_id}/enable",
+                  "POST /webhooks/{webhook_id}/disable"
                 ]
               },
               {
                 "group": "Test",
                 "pages": [
-                  "POST /webhooks/{uuid}/test"
+                  "POST /webhooks/{webhook_id}/test"
                 ]
               },
               {
                 "group": "Requests",
                 "pages": [
-                  "GET /webhooks/{uuid}/requests",
-                  "POST /webhooks/{webhook_uuid}/requests/{uuid}/retry"
+                  "GET /webhooks/{webhook_id}/requests",
+                  "POST /webhooks/{webhook_id}/requests/{request_id}/retry"
                 ]
               }
             ]

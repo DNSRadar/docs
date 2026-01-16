@@ -22,12 +22,6 @@ When an event occurs, we send a POST request to your webhook URL with the follow
   "event": {
     "uuid": "evt_abc123...",
     "monitor_uuid": "mon_abc123...",
-    "domain": "example.com",
-    "subdomain": "www",
-    "record_type": "A",
-    "expected_value": [
-      "192.168.1.1"
-    ],
     "occurred": "2023-11-07T05:31:56Z",
     "previous_value": [
       "192.168.1.1"
@@ -37,9 +31,18 @@ When an event occurs, we send a POST request to your webhook URL with the follow
     ],
     "old_state": "MISMATCH",
     "new_state": "VALID",
-    "incidence_count": 0
+    "incidence_count": 0,
+    "domain": {
+      "domain": "example.com",
+      "subdomain": "www",
+      "record_type": "A",
+      "expected_value": [
+        "192.168.1.1"
+      ],
+      "is_exact_match": false
+    }
   },
-  "created": "2023-11-07T05:31:56Z"
+  "created": "2023-11-07T05:31:56"
 }
 ```
 
@@ -65,32 +68,16 @@ When an event occurs, we send a POST request to your webhook URL with the follow
   Unique identifier of the monitor that detected the change
 </ParamField>
 
-<ParamField path="event.domain" type="string" required>
-  The root domain being monitored
-</ParamField>
-
-<ParamField path="event.subdomain" type="string">
-  The subdomain being monitored (if applicable)
-</ParamField>
-
-<ParamField path="event.record_type" type="string" required>
-  The DNS record type (A, AAAA, CNAME, MX, TXT, etc.)
-</ParamField>
-
-<ParamField path="event.expected_value" type="array" required>
-  The expected DNS record values for the monitor
-</ParamField>
-
 <ParamField path="event.occurred" type="string" required>
   ISO 8601 timestamp when the event occurred
 </ParamField>
 
-<ParamField path="event.previous_value" type="array" required>
-  The DNS record values before this event
+<ParamField path="event.previous_value" type="array">
+  The DNS record values before this event (if available)
 </ParamField>
 
-<ParamField path="event.current_value" type="array" required>
-  The current DNS record values
+<ParamField path="event.current_value" type="array">
+  The current DNS record values (if available)
 </ParamField>
 
 <ParamField path="event.old_state" type="string" required>
@@ -103,6 +90,30 @@ When an event occurs, we send a POST request to your webhook URL with the follow
 
 <ParamField path="event.incidence_count" type="integer" required>
   Number of consecutive times the monitor has been in this state
+</ParamField>
+
+<ParamField path="event.domain" type="object" required>
+  Domain configuration object for the monitor
+</ParamField>
+
+<ParamField path="event.domain.domain" type="string" required>
+  The root domain being monitored
+</ParamField>
+
+<ParamField path="event.domain.subdomain" type="string">
+  The subdomain being monitored (if applicable)
+</ParamField>
+
+<ParamField path="event.domain.record_type" type="string" required>
+  The DNS record type (A, AAAA, CNAME, MX, TXT, etc.)
+</ParamField>
+
+<ParamField path="event.domain.expected_value" type="array" required>
+  The expected DNS record values for the monitor
+</ParamField>
+
+<ParamField path="event.domain.is_exact_match" type="boolean" required>
+  Whether the monitor requires an exact match of DNS values
 </ParamField>
 
 <ParamField path="created" type="string" required>
