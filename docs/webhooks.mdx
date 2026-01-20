@@ -17,11 +17,11 @@ When an event occurs, we send a POST request to your webhook URL with the follow
 
 ```json
 {
-  "uuid": "req_abc123...",
-  "webhook_uuid": "wh_abc123...",
+  "id": "req_abc123...",
+  "webhook_id": "whk_abc123...",
   "event": {
-    "uuid": "evt_abc123...",
-    "monitor_uuid": "mon_abc123...",
+    "id": "evt_abc123...",
+    "monitor_id": "mon_abc123...",
     "occurred": "2023-11-07T05:31:56Z",
     "previous_value": [
       "192.168.1.1"
@@ -48,11 +48,11 @@ When an event occurs, we send a POST request to your webhook URL with the follow
 
 ### Payload Fields
 
-<ParamField path="uuid" type="string" required>
+<ParamField path="id" type="string" required>
   Unique identifier for this webhook request
 </ParamField>
 
-<ParamField path="webhook_uuid" type="string" required>
+<ParamField path="webhook_id" type="string" required>
   Unique identifier of the webhook configuration
 </ParamField>
 
@@ -60,11 +60,11 @@ When an event occurs, we send a POST request to your webhook URL with the follow
   The monitoring event that triggered the webhook
 </ParamField>
 
-<ParamField path="event.uuid" type="string" required>
+<ParamField path="event.id" type="string" required>
   Unique identifier for the event
 </ParamField>
 
-<ParamField path="event.monitor_uuid" type="string" required>
+<ParamField path="event.monitor_id" type="string" required>
   Unique identifier of the monitor that detected the change
 </ParamField>
 
@@ -205,7 +205,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 
     // Parse and process the event
     const event = JSON.parse(req.body);
-    console.log('Received event:', event.event.uuid);
+    console.log('Received event:', event.event.id);
 
     res.status(200).send('OK');
   } catch (error) {
@@ -253,7 +253,7 @@ def webhook():
 
         # Parse and process the event
         event = request.json
-        print(f"Received event: {event['event']['uuid']}")
+        print(f"Received event: {event['event']['id']}")
 
         return 'OK', 200
     except ValueError as e:
@@ -321,7 +321,7 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
     // Parse and process event
     var event map[string]interface{}
     json.Unmarshal(body, &event)
-    fmt.Printf("Received event: %s\n", event["event"].(map[string]interface{})["uuid"])
+    fmt.Printf("Received event: %s\n", event["event"].(map[string]interface{})["id"])
 
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("OK"))
@@ -367,7 +367,7 @@ try {
 
     // Parse and process the event
     $event = json_decode($payload, true);
-    error_log("Received event: " . $event['event']['uuid']);
+    error_log("Received event: " . $event['event']['id']);
 
     http_response_code(200);
     echo 'OK';
@@ -405,18 +405,18 @@ try {
   </Accordion>
 
   <Accordion title="Handle Duplicate Events" icon="copy">
-    Due to retries, you may receive the same event multiple times. Use the `uuid` field to deduplicate events.
+    Due to retries, you may receive the same event multiple times. Use the `id` field to deduplicate events.
 
     ```javascript
     const processedEvents = new Set();
 
     function handleWebhook(event) {
-      if (processedEvents.has(event.uuid)) {
+      if (processedEvents.has(event.id)) {
         console.log('Duplicate event, skipping');
         return;
       }
 
-      processedEvents.add(event.uuid);
+      processedEvents.add(event.id);
       // Process the event
     }
     ```
@@ -452,7 +452,7 @@ try {
     Use the webhook test endpoint to verify your integration before going live.
 
     ```bash
-    curl -X POST https://api.dnsradar.dev/webhooks/{uuid}/test \
+    curl -X POST https://api.dnsradar.dev/webhooks/{id}/test \
       -H "X-Api-Key: your_api_key"
     ```
   </Accordion>
@@ -502,13 +502,13 @@ app.post('/webhook',
       const webhook = JSON.parse(req.body);
 
       // Check for duplicates
-      if (processedEvents.has(webhook.uuid)) {
-        console.log(`Duplicate event: ${webhook.uuid}`);
+      if (processedEvents.has(webhook.id)) {
+        console.log(`Duplicate event: ${webhook.id}`);
         return res.status(200).send('OK');
       }
 
       // Mark as processed
-      processedEvents.add(webhook.uuid);
+      processedEvents.add(webhook.id);
 
       // Respond immediately
       res.status(200).send('OK');
@@ -528,7 +528,7 @@ app.post('/webhook',
 async function processEvent(webhook) {
   const event = webhook.event;
 
-  console.log(`Processing event ${event.uuid} for ${event.domain}`);
+  console.log(`Processing event ${event.id} for ${event.domain}`);
   console.log(`State changed: ${event.old_state} → ${event.new_state}`);
 
   // Your custom logic here
@@ -587,12 +587,12 @@ def webhook():
         webhook_data = request.json
 
         # Check for duplicates
-        if webhook_data['uuid'] in processed_events:
-            logger.info(f"Duplicate event: {webhook_data['uuid']}")
+        if webhook_data['id'] in processed_events:
+            logger.info(f"Duplicate event: {webhook_data['id']}")
             return 'OK', 200
 
         # Mark as processed
-        processed_events.add(webhook_data['uuid'])
+        processed_events.add(webhook_data['id'])
 
         # Process event
         process_event(webhook_data)
@@ -606,7 +606,7 @@ def webhook():
 def process_event(webhook):
     event = webhook['event']
 
-    logger.info(f"Processing event {event['uuid']} for {event['domain']}")
+    logger.info(f"Processing event {event['id']} for {event['domain']}")
     logger.info(f"State changed: {event['old_state']} → {event['new_state']}")
 
     # Your custom logic here
