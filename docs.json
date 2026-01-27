@@ -41,6 +41,7 @@
               "GET /monitors/{monitor_id}",
               "PATCH /monitors/{monitor_id}",
               "DELETE /monitors/{monitor_id}",
+              "DELETE /monitors/bulk",
               {
                 "group": "Enable/Disable",
                 "pages": [
